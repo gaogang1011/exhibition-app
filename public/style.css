@@ -83,3 +83,29 @@ h1, h2, h3 { color: #007bff; margin-bottom: 20px; }
     color: #007bff;
     font-weight: bold;
 }
+/* ... (이전 CSS 코드 유지) ... */
+
+/* [추가] 모드 버튼 활성화 스타일 */
+.mode-selector {
+    margin-bottom: 20px;
+}
+.mode-selector .mode-btn {
+    background-color: #f0f0f0;
+    color: #555;
+    border: 1px solid #ddd;
+}
+.mode-selector .mode-btn.active {
+    background-color: #007bff;
+    color: white;
+    border-color: #007bff;
+}
+
+/* [추가] QR 코드 리더 영역 스타일 */
+#qr-reader {
+    width: 100%;
+    margin: 15px auto;
+}
+.note {
+    font-size: 0.8em;
+    color: #999;
+}

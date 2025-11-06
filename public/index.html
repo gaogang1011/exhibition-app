@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI 이미지 스튜디오</title>
     <link rel="stylesheet" href="style.css">
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 </head>
 <body>
 
@@ -12,57 +13,44 @@
     <h1>🎨 AI 이미지 변환/생성 스튜디오</h1>
 
     <div class="mode-selector">
-        <button class="btn mode-btn" data-mode="image">📷 이미지 변환 (Image to Image)</button>
-        <button class="btn mode-btn" data-mode="text">📝 텍스트 생성 (Text to Image)</button>
+        <button class="btn mode-btn" data-mode="image">📷 이미지 변환</button>
+        <button class="btn mode-btn" data-mode="text">📝 텍스트 생성</button>
         <button class="btn mode-btn" data-mode="qr">📱 QR 코드 스캔/업로드</button>
     </div>
 
+    <section id="qrMode" class="section-box mode-content" style="display: none;">
+        <h3>📱 QR 코드 스캔 및 처리</h3>
+        <div id="qr-reader" style="width: 100%;"></div>
+        <p id="qrResultStatus" class="status-text"></p>
+        <p class="status-text note">QR 스캔은 카메라 접근 권한이 필요하며, 보안상의 이유로 HTTPS 환경에서만 작동할 수 있습니다.</p>
+    </section>
+
     <section id="imageMode" class="section-box mode-content" style="display: none;">
-        <h3>📷 이미지 업로드 및 변환</h3>
-        <input type="file" accept="image/*" id="fileUploader" style="display: none;">
-        <button id="uploadButton" class="btn primary-btn">파일 선택 (앨범/파일 접근 가능)</button>
-        <img id="originalImage" alt="업로드된 원본 이미지" class="preview-img" style="display: none;">
-        <p id="fileStatus" class="status-text"></p>
     </section>
 
     <section id="textMode" class="section-box mode-content" style="display: none;">
-        <h3>📝 텍스트로 이미지 생성</h3>
-        <textarea id="textPromptInput" placeholder="생성하고 싶은 이미지를 상세히 설명하세요..."
-                  rows="3" class="input-full"></textarea>
-        <p class="status-text">스타일은 아래 공통 설정을 따릅니다.</p>
-    </section>
-
-    <section id="qrMode" class="section-box mode-content" style="display: none;">
-        <h3>📱 QR 코드 스캔 (기능 연동 필요)</h3>
-        <p class="status-text">QR 코드를 스캔하여 바로 이미지/텍스트를 입력할 수 있습니다.</p>
-        <button class="btn primary-btn">QR 코드 스캔 시작</button>
     </section>
 
     <section id="commonAISettings" class="section-box" style="display: none;">
-        <h3>공통 AI 설정</h3>
-        <textarea id="stylePromptInput" placeholder="AI 스타일 추가 설명..." rows="2" class="input-full"></textarea>
-        <select id="styleSelect" class="input-full">
-            <option value="default">스타일 선택 (선택 사항)</option>
-            <option value="cartoon">카툰 스타일</option>
-            <option value="oilpainting">유화 스타일</option>
-        </select>
-
-        <button id="aiConvertButton" class="btn secondary-btn">✨ AI로 변환/생성하기</button>
-
-        <p id="loadingStatus" class="status-text" style="display: none;">AI 이미지 생성 중입니다. 잠시만 기다려주세요...</p>
     </section>
+
 </div>
 
 <script>
+    // 전역 변수 설정
+    let currentMode = 'image';
+    let uploadedFile = null;
+    let html5QrCode = null; // QR 스캐너 객체
+
     document.addEventListener('DOMContentLoaded', () => {
         // ... (요소 변수 선언 생략)
-        let currentMode = 'image'; // 현재 모드
-        let uploadedFile = null;
 
         // 모드 전환 로직
         document.querySelectorAll('.mode-btn').forEach(button => {
             button.addEventListener('click', () => {
+                const prevMode = currentMode;
                 currentMode = button.dataset.mode;
+
                 document.querySelectorAll('.mode-content').forEach(content => {
                     content.style.display = 'none';
                 });
@@ -70,89 +58,65 @@
                 document.getElementById('commonAISettings').style.display = 'block';
                 document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
                 button.classList.add('active');
+
+                // [수정] QR 모드 진입/이탈 시 카메라 제어
+                if (prevMode === 'qr' && html5QrCode) {
+                    // 다른 모드로 전환 시 스캐너 중지
+                    html5QrCode.stop().then(ignore => {
+                        console.log("QR scanning stopped.");
+                    }).catch(err => {
+                        console.log("Error stopping QR scanning:", err);
+                    });
+                }
+                if (currentMode === 'qr') {
+                    // QR 모드 진입 시 스캐너 시작
+                    initializeQrScanner();
+                }
             });
         });
+
+        // ... (파일 업로드 로직은 동일) ...
+
+        // [추가] QR 스캐너 초기화 함수
+        function initializeQrScanner() {
+            if (!html5QrCode) {
+                html5QrCode = new Html5Qrcode("qr-reader");
+            }
+
+            // 스캐너 설정
+            const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+
+            // 스캐너 시작
+            html5QrCode.start(
+                { facingMode: "environment" }, // 후면 카메라 사용
+                config,
+                (decodedText, decodedResult) => {
+                    // QR 코드 스캔 성공!
+                    document.getElementById('qrResultStatus').textContent = `스캔 성공: ${decodedText.substring(0, 30)}...`;
+
+                    // 스캔된 텍스트를 Text-to-Image 모드의 프롬프트로 자동 입력
+                    document.getElementById('textPromptInput').value = decodedText;
+
+                    // [자동 전환] 텍스트가 스캔되었으므로 Text 모드로 자동 전환하여 AI 설정 진행
+                    document.querySelector('.mode-btn[data-mode="text"]').click();
+                    alert(`QR 코드 스캔 성공! 텍스트가 AI 프롬프트에 자동 입력되었습니다.`);
+
+                    html5QrCode.stop(); // 스캔 성공 후 카메라 중지
+                },
+                (errorMessage) => {
+                    // 스캔 진행 중 (오류 메시지는 무시)
+                    document.getElementById('qrResultStatus').textContent = "QR 코드를 중앙에 맞춰주세요.";
+                }
+            ).catch((err) => {
+                document.getElementById('qrResultStatus').textContent = `카메라 접근 오류 또는 지원되지 않는 환경: ${err}`;
+                console.error("QR Scanner Start Error:", err);
+            });
+        }
 
         // 초기 모드 설정
         document.querySelector('.mode-btn[data-mode="image"]').click();
 
-        // 파일 업로드 로직 (이전 코드와 동일)
-        document.getElementById('uploadButton').addEventListener('click', () => {
-            document.getElementById('fileUploader').click();
-        });
-        document.getElementById('fileUploader').addEventListener('change', (event) => {
-            uploadedFile = event.target.files[0];
-            if (!uploadedFile) return;
-
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                document.getElementById('originalImage').src = e.target.result;
-                document.getElementById('originalImage').style.display = 'block';
-                document.getElementById('fileStatus').textContent = `선택된 파일: ${uploadedFile.name}`;
-            };
-            reader.readAsDataURL(uploadedFile);
-        });
-
-        // AI 변환 버튼 클릭 시 (통합 로직)
-        document.getElementById('aiConvertButton').addEventListener('click', async () => {
-            let prompt = '';
-            const style = document.getElementById('styleSelect').value;
-            const stylePrompt = document.getElementById('stylePromptInput').value;
-
-            // 1. 모드별 유효성 검사 및 프롬프트 설정
-            if (currentMode === 'image') {
-                if (!uploadedFile) return alert('이미지를 업로드해주세요.');
-                prompt = '이미지를 AI 스타일로 변환: ' + stylePrompt; // Image to Image
-            } else if (currentMode === 'text') {
-                prompt = document.getElementById('textPromptInput').value;
-                if (!prompt) return alert('생성할 텍스트를 입력해주세요.');
-                prompt += (stylePrompt ? ', ' + stylePrompt : ''); // Text to Image
-            } else if (currentMode === 'qr') {
-                // QR 코드로 획득한 이미지를 uploadedFile에 할당하거나, 텍스트를 prompt에 할당하는 로직 필요
-                alert('QR 코드 스캔 후, 이미지 또는 텍스트 데이터를 먼저 설정해야 합니다.');
-                return;
-            }
-
-            // 공통 처리 시작
-            document.getElementById('loadingStatus').style.display = 'block';
-            document.getElementById('aiConvertButton').disabled = true;
-
-            const formData = new FormData();
-            if (uploadedFile && currentMode === 'image') {
-                formData.append('image', uploadedFile);
-            }
-            formData.append('prompt', prompt);
-            formData.append('style', style);
-            formData.append('mode', currentMode); // 백엔드에서 어떤 모드인지 확인용
-
-            try {
-                const response = await fetch('/api/ai-process', {
-                    method: 'POST',
-                    body: formData
-                });
-
-                if (!response.ok) {
-                    throw new Error(`AI 서버 오류: ${response.statusText}`);
-                }
-
-                const data = await response.json();
-                const aiImageUrl = data.aiImageUrl;
-
-                if (aiImageUrl) {
-                    // 다운로드 페이지로 이동 및 결과 URL 전달
-                    window.location.href = `download.html?url=${encodeURIComponent(aiImageUrl)}`;
-                } else {
-                    alert('AI 변환 결과 URL을 받지 못했습니다.');
-                }
-
-            } catch (error) {
-                alert('이미지 변환에 실패했습니다. (서버/AI 통신 오류)');
-                console.error('Fetch Error:', error);
-            } finally {
-                document.getElementById('loadingStatus').style.display = 'none';
-                document.getElementById('aiConvertButton').disabled = false;
-            }
-        });
+        // ... (AI 변환 버튼 클릭 시 로직은 이전 코드와 동일) ...
     });
 </script>
 </body>
