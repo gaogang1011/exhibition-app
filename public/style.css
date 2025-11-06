@@ -1,126 +1,85 @@
-/* 기본 설정: 모든 요소의 여백 및 상자 모델 재설정 */
-* {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-}
-
 body {
-    font-family: Arial, sans-serif;
+    font-family: 'Noto Sans KR', sans-serif;
+    margin: 0;
+    background-color: #f4f4f4;
+    color: #333;
     display: flex;
     justify-content: center;
     align-items: center;
-    min-height: 100vh; /* 화면 전체 높이 사용 */
-    margin: 0;
-    background-color: #f4f4f4; /* 은은한 배경색 */
-    color: #333;
+    min-height: 100vh;
+}
+.container {
+    max-width: 600px;
+    width: 90%;
+    padding: 30px;
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
     text-align: center;
 }
+h1, h2, h3 { color: #007bff; margin-bottom: 20px; }
 
-.container {
-    background-color: #fff;
-    padding: 30px;
-    border-radius: 12px;
-    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1); /* 부드러운 그림자 */
-    max-width: 900px; /* PC 화면용 최대 너비 */
-    width: 95%;
-    /* PC 디스플레이의 이미지 박스를 가로로 나열하기 위해 flex 사용 */
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
-
-h1 {
-    color: #007bff; /* 파란색 계열 강조 */
-    margin-bottom: 20px;
-}
-
-/* QR 코드 영역 스타일 */
-#qrcode, #downloadQrcodeElement {
-    margin: 20px auto;
-    padding: 10px;
-    border: 1px solid #ddd;
+/* 버튼 공통 스타일 */
+.btn {
+    padding: 12px 25px;
+    margin: 10px 5px;
+    cursor: pointer;
+    border: none;
+    border-radius: 5px;
+    font-weight: bold;
+    transition: background-color 0.3s;
+    text-decoration: none; /* <a> 태그 스타일 */
     display: inline-block;
-    background-color: #fff;
+}
+.primary-btn {
+    background-color: #28a745;
+    color: white;
+}
+.secondary-btn {
+    background-color: #007bff;
+    color: white;
+}
+
+/* AI 설정/업로드 영역 박스 스타일 */
+.section-box {
+    margin-top: 30px;
+    padding: 20px;
+    border: 1px dashed #ccc;
     border-radius: 8px;
 }
 
-/* 이미지 디스플레이 영역 (PC 화면) */
-#imageDisplay {
-    display: flex;
-    justify-content: space-around; /* 이미지 박스 사이 간격 조정 */
-    width: 100%;
-    margin-top: 20px;
-    flex-wrap: wrap; /* 화면이 작아지면 줄바꿈 허용 */
-}
-
-.image-box {
-    width: 48%; /* 이미지 박스 두 개가 나란히 보이도록 설정 */
-    margin-bottom: 20px;
+/* 입력 필드 스타일 */
+.input-full {
+    width: 90%;
     padding: 10px;
-    border: 1px solid #eee;
-    border-radius: 8px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+    border: 1px solid #ddd;
+    box-sizing: border-box;
 }
 
-@media (max-width: 768px) {
-    .image-box {
-        width: 100%; /* 모바일에서는 이미지를 세로로 정렬 */
-    }
-}
-
-.image-preview {
+/* 이미지 스타일 */
+#originalImage, .final-image {
     max-width: 100%;
     height: auto;
-    border: 1px solid #ccc;
-    margin-top: 15px;
-    border-radius: 5px;
-    display: block; /* 이미지 하단 여백 제거 */
-}
-
-/* 버튼 스타일 */
-button {
-    background-color: #28a745; /* 초록색 계열 버튼 */
-    color: white;
-    padding: 12px 25px;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 17px;
-    margin-top: 15px;
-    transition: background-color 0.3s;
-}
-
-button:hover {
-    background-color: #218838;
-}
-
-button:disabled {
-    background-color: #cccccc;
-    cursor: not-allowed;
-}
-
-/* 상태 메시지 */
-#status {
-    margin-top: 15px;
-    font-weight: bold;
-    color: #007bff;
-}
-
-/* 모바일 파일 입력 필드 및 미리보기 */
-input[type="file"] {
-    display: block;
-    margin: 20px auto;
-    padding: 10px;
+    margin-top: 20px;
+    border-radius: 8px;
     border: 1px solid #ddd;
-    border-radius: 5px;
-    width: calc(100% - 22px);
-    box-sizing: border-box;
-    cursor: pointer;
 }
 
-/* 다운로드 QR 코드 영역 */
-.download-qr-code {
-    margin-top: 30px;
-    padding-top: 20px;
-    border-top: 1px solid #eee;
+/* 다운로드 버튼 스타일 */
+.download-link {
+    background-color: #ffc107;
+    color: black;
+    font-size: 1.1em;
+}
+
+.go-back-btn {
+    background-color: #6c757d;
+    color: white;
+}
+
+.status-text {
+    color: #007bff;
+    font-weight: bold;
 }

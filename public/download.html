@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>다운로드 완료</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="container">
+    <h2>🎉 AI 변환 완료!</h2>
+
+    <img id="finalImage" alt="AI 변환 결과 이미지" class="final-image">
+
+    <a id="downloadLink" class="btn download-link" **download="my_ai_art.png"** href="#">
+        ⬇️ 이미지 파일 저장
+    </a>
+
+    <a href="index.html" class="btn go-back-btn">
+        ↩️ 다시 변환하기
+    </a>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const aiImageUrl = urlParams.get('url');
+
+        if (aiImageUrl) {
+            const decodedUrl = decodeURIComponent(aiImageUrl);
+
+            document.getElementById('finalImage').src = decodedUrl;
+
+            const downloadLink = document.getElementById('downloadLink');
+            downloadLink.href = decodedUrl;
+
+        } else {
+            alert('이미지 정보를 찾을 수 없어 원본 페이지로 돌아갑니다.');
+            window.location.href = 'index.html'; // 정보가 없으면 복귀
+        }
+    });
+</script>
+</body>
+</html>

@@ -1,113 +1,51 @@
 const express = require('express');
-const http = require('http');
-const socketIo = require('socket.io');
 const multer = require('multer');
 const path = require('path');
-const { v4: uuidv4 } = require('uuid');
 const fs = require('fs');
-
 const app = express();
-const server = http.createServer(app);
-const io = socketIo(server);
+const port = process.env.PORT || 3000;
 
-// Render 환경에서는 PORT 환경 변수를 사용해야 합니다.
-const PORT = process.env.PORT || 3000;
+// Multer 설정: 메모리에 임시 파일 저장 (AI 처리를 위해)
+const upload = multer({ storage: multer.memoryStorage() });
 
-// ----- 폴더 및 설정 (수정: transformed 폴더를 public 안으로 이동하여 접근성 확보) -----
-// Render 환경에서는 최상위 폴더가 루트입니다.
-const UPLOAD_DIR = path.join(__dirname, 'public', 'uploads');
-const TRANSFORMED_DIR = path.join(__dirname, 'public', 'transformed');
-
-// 폴더가 없으면 생성 (Render 환경에서도 빌드 시에 생성됩니다)
-if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
-if (!fs.existsSync(TRANSFORMED_DIR)) fs.mkdirSync(TRANSFORMED_DIR, { recursive: true });
-
-// ----- Multer 설정: 이미지 업로드 처리 -----
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        // 실제 저장 경로는 public/uploads 입니다.
-        cb(null, UPLOAD_DIR);
-    },
-    filename: (req, file, cb) => {
-        cb(null, uuidv4() + path.extname(file.originalname));
-    }
-});
-const upload = multer({ storage: storage });
-
-// ----- 정적 파일 서비스 (public 폴더를 루트로 설정) -----
+// **[핵심 경로 설정]** public 폴더의 파일들을 웹에서 접근 가능하도록 설정
 app.use(express.static(path.join(__dirname, 'public')));
-// 이제 /uploads/파일명 이나 /transformed/파일명 으로 바로 접근 가능합니다.
+// AI 결과 이미지를 저장할 폴더 (images)도 웹에서 접근 가능하게 설정
+app.use('/images', express.static(path.join(__dirname, 'images')));
 
-// ----- 세션 관리 -----
-const sessions = {};
+// AI 처리 API 엔드포인트
+app.post('/api/ai-process', upload.single('image'), async (req, res) => {
+    const uploadedFile = req.file;
+    const { prompt, style } = req.body;
 
-// ----- Socket.IO 실시간 통신 -----
-io.on('connection', (socket) => {
-    socket.on('createSession', () => {
-        const sessionId = uuidv4();
-        sessions[sessionId] = { pcSocketId: socket.id, uploadedImage: null, transformedImage: null };
-        const uploadUrl = `/upload.html?sessionId=${sessionId}`;
-        socket.emit('sessionCreated', { sessionId: sessionId, uploadUrl: uploadUrl });
-    });
-
-    socket.on('disconnect', () => {
-        for (const sessionId in sessions) {
-            if (sessions[sessionId].pcSocketId === socket.id) {
-                delete sessions[sessionId];
-                break;
-            }
-        }
-    });
-});
-
-// ----- 이미지 업로드 API (POST /upload-image) -----
-app.post('/upload-image', upload.single('image'), async (req, res) => {
-    const sessionId = req.body.sessionId;
-    // URL 경로는 public 폴더 기준으로 잡힙니다.
-    const imageUrl = `/uploads/${req.file.filename}`;
-
-    if (!sessionId || !sessions[sessionId]) {
-        // 업로드 후 에러 발생 시 파일 삭제 (선택적)
-        fs.unlinkSync(req.file.path);
-        return res.status(400).send({ message: '유효하지 않은 세션 ID입니다.' });
+    if (!uploadedFile) {
+        return res.status(400).json({ error: '이미지 파일이 누락되었습니다.' });
     }
 
-    sessions[sessionId].uploadedImage = imageUrl;
-
-    // 1. PC 화면에 원본 이미지 도착 알림
-    io.to(sessions[sessionId].pcSocketId).emit('imageUploaded', { imageUrl: imageUrl });
-
-    // 2. AI 변환 실행 (더미 로직)
-    // AI 변환 로직은 시간이 걸릴 수 있으므로 async/await을 사용합니다.
-    const transformedImageUrl = await performAITransformation(req.file.path);
-    sessions[sessionId].transformedImage = transformedImageUrl;
-
-    // 3. PC 화면에 변환 완료 알림
-    io.to(sessions[sessionId].pcSocketId).emit('imageTransformed', { transformedImageUrl: transformedImageUrl });
-
-    res.send({ message: '업로드 및 처리 완료' });
-});
-
-// ----- AI 변환 더미 함수 (실제 AI 로직으로 대체 필수) -----
-async function performAITransformation(originalFilePath) {
-    // Render 서버는 이미지를 생성한 후, TRANSFORMED_DIR에 저장해야 합니다.
-    const originalFilename = path.basename(originalFilePath);
-    const transformedFilename = `transformed_${originalFilename}`;
-    const transformedFilePath = path.join(TRANSFORMED_DIR, transformedFilename);
-
-    // 원본 파일을 transformed 폴더에 복사하는 것으로 AI 변환을 대체
     try {
-        fs.copyFileSync(originalFilePath, transformedFilePath);
+        // [구현 필요] 이곳에 실제 AI 모델 호출 로직을 넣어야 합니다.
+        // 현재는 더미 이미지 URL을 반환한다고 가정합니다.
+
+        const aiImageBuffer = Buffer.from("DUMMY IMAGE DATA"); // 실제로는 AI 모델 결과
+
+        // 1. 이미지 저장 (images 폴더에 저장)
+        const finalFileName = `ai_result_${Date.now()}.png`;
+        const savePath = path.join(__dirname, 'images', finalFileName);
+
+        // **실제 AI 이미지 데이터로 교체해야 함**
+        // fs.writeFileSync(savePath, aiImageBuffer);
+
+        // 2. 웹에서 접근 가능한 URL 반환
+        const aiImageUrl = `/images/DUMMY_RESULT.png`; // 예시: 실제 결과 이미지로 교체 필요
+
+        res.json({ aiImageUrl: aiImageUrl });
+
     } catch (error) {
-        console.error("AI 변환 더미 중 에러:", error);
+        console.error('AI 처리 중 오류 발생:', error);
+        res.status(500).json({ error: 'AI 이미지 생성에 실패했습니다. 서버 로그 확인.' });
     }
+});
 
-    // 최종 다운로드 URL 경로를 반환합니다.
-    return `/transformed/${transformedFilename}`;
-}
-
-server.listen(PORT, () => {
-    // Render 환경에서는 http://localhost:3000 메시지가 아니라,
-    // "Server running on port [PORT 번호]" 와 같은 메시지를 출력하는 것이 일반적입니다.
-    console.log(`Server is running on port ${PORT}`);
+app.listen(port, () => {
+    console.log(`Server running on port ${port}`);
 });
