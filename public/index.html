@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>전시회 AI 이미지 변환 디스플레이</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="container">
+    <h1>AI 스타일 변환 부스 ✨</h1>
+    <div id="status">세션을 생성하는 중...</div>
+
+    <div id="qrCodeDisplay" style="display:none;">
+        <p>모바일로 아래 QR 코드를 스캔하여 이미지를 업로드하세요!</p>
+        <div id="qrcode"></div>
+    </div>
+
+    <div id="imageDisplay" style="display:none;">
+        <div class="image-box">
+            <p>원본 이미지:</p>
+            <img id="originalImage" src="" alt="업로드된 원본 이미지" class="image-preview">
+        </div>
+
+        <div class="image-box">
+            <p>AI 변환 이미지:</p>
+            <img id="transformedImage" src="" alt="AI 변환 이미지" class="image-preview">
+        </div>
+
+        <div id="downloadQrCode" class="download-qr-code">
+            <p>변환된 이미지를 **다운로드**하려면 아래 QR 코드를 스캔하세요! 👇</p>
+            <div id="downloadQrcodeElement"></div>
+        </div>
+    </div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="https://cdn.rawgit.com/davidshimjs/qrcodejs/gh-pages/qrcode.min.js"></script>
+<script>
+    const socket = io();
+    let qrcode = new QRCode(document.getElementById("qrcode"), { width: 200, height: 200 });
+    let downloadQrcode = new QRCode(document.getElementById("downloadQrcodeElement"), { width: 150, height: 150 });
+
+    socket.emit('createSession'); // 서버에 세션 생성 요청
+
+    socket.on('sessionCreated', (data) => {
+        const uploadUrl = window.location.origin + data.uploadUrl;
+        qrcode.makeCode(uploadUrl);
+        document.getElementById('status').innerText = '업로드 대기 중';
+        document.getElementById('qrCodeDisplay').style.display = 'block';
+    });
+
+    // 모바일 업로드 완료 시 (실시간)
+    socket.on('imageUploaded', (data) => {
+        document.getElementById('qrCodeDisplay').style.display = 'none';
+        document.getElementById('imageDisplay').style.display = 'flex'; // 이미지 영역 표시
+        document.getElementById('originalImage').src = data.imageUrl;
+        document.getElementById('status').innerText = '이미지 업로드 완료! AI 변환 중...';
+
+        // 기존 이미지 초기화
+        document.getElementById('transformedImage').src = '';
+        document.getElementById('downloadQrCode').style.display = 'none';
+    });
+
+    // AI 변환 완료 시 (실시간)
+    socket.on('imageTransformed', (data) => {
+        document.getElementById('transformedImage').src = data.transformedImageUrl;
+        document.getElementById('status').innerText = 'AI 변환 완료!';
+
+        // 다운로드 QR 코드 생성 (다운로드 URL을 QR 코드로 인코딩)
+        downloadQrcode.makeCode(window.location.origin + data.transformedImageUrl);
+        document.getElementById('downloadQrCode').style.display = 'block';
+    });
+</script>
+</body>
+</html>

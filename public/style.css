@@ -1,0 +1,126 @@
+/* 기본 설정: 모든 요소의 여백 및 상자 모델 재설정 */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh; /* 화면 전체 높이 사용 */
+    margin: 0;
+    background-color: #f4f4f4; /* 은은한 배경색 */
+    color: #333;
+    text-align: center;
+}
+
+.container {
+    background-color: #fff;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1); /* 부드러운 그림자 */
+    max-width: 900px; /* PC 화면용 최대 너비 */
+    width: 95%;
+    /* PC 디스플레이의 이미지 박스를 가로로 나열하기 위해 flex 사용 */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+h1 {
+    color: #007bff; /* 파란색 계열 강조 */
+    margin-bottom: 20px;
+}
+
+/* QR 코드 영역 스타일 */
+#qrcode, #downloadQrcodeElement {
+    margin: 20px auto;
+    padding: 10px;
+    border: 1px solid #ddd;
+    display: inline-block;
+    background-color: #fff;
+    border-radius: 8px;
+}
+
+/* 이미지 디스플레이 영역 (PC 화면) */
+#imageDisplay {
+    display: flex;
+    justify-content: space-around; /* 이미지 박스 사이 간격 조정 */
+    width: 100%;
+    margin-top: 20px;
+    flex-wrap: wrap; /* 화면이 작아지면 줄바꿈 허용 */
+}
+
+.image-box {
+    width: 48%; /* 이미지 박스 두 개가 나란히 보이도록 설정 */
+    margin-bottom: 20px;
+    padding: 10px;
+    border: 1px solid #eee;
+    border-radius: 8px;
+}
+
+@media (max-width: 768px) {
+    .image-box {
+        width: 100%; /* 모바일에서는 이미지를 세로로 정렬 */
+    }
+}
+
+.image-preview {
+    max-width: 100%;
+    height: auto;
+    border: 1px solid #ccc;
+    margin-top: 15px;
+    border-radius: 5px;
+    display: block; /* 이미지 하단 여백 제거 */
+}
+
+/* 버튼 스타일 */
+button {
+    background-color: #28a745; /* 초록색 계열 버튼 */
+    color: white;
+    padding: 12px 25px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 17px;
+    margin-top: 15px;
+    transition: background-color 0.3s;
+}
+
+button:hover {
+    background-color: #218838;
+}
+
+button:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+}
+
+/* 상태 메시지 */
+#status {
+    margin-top: 15px;
+    font-weight: bold;
+    color: #007bff;
+}
+
+/* 모바일 파일 입력 필드 및 미리보기 */
+input[type="file"] {
+    display: block;
+    margin: 20px auto;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    width: calc(100% - 22px);
+    box-sizing: border-box;
+    cursor: pointer;
+}
+
+/* 다운로드 QR 코드 영역 */
+.download-qr-code {
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+}

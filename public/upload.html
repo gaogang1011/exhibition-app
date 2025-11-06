@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>이미지 업로드</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="container">
+    <h1>내 사진 업로드</h1>
+    <p>선택 후 업로드 버튼을 누르세요. (갤러리 또는 즉석 촬영 가능)</p>
+    <input type="file" id="imageInput" accept="image/*" capture="user">
+
+    <img id="previewImage" src="" alt="이미지 미리보기" style="max-width: 100%; display: none; margin-top: 10px;">
+    <button id="uploadButton">업로드</button>
+    <p id="uploadStatus"></p>
+</div>
+
+<script>
+    const imageInput = document.getElementById('imageInput');
+    const uploadButton = document.getElementById('uploadButton');
+    const uploadStatus = document.getElementById('uploadStatus');
+    const previewImage = document.getElementById('previewImage');
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const sessionId = urlParams.get('sessionId');
+
+    if (!sessionId) {
+        uploadStatus.innerText = '세션 오류. 다시 스캔해 주세요.';
+        uploadButton.disabled = true;
+    }
+
+    imageInput.addEventListener('change', (event) => {
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                previewImage.src = e.target.result;
+                previewImage.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        } else {
+            previewImage.style.display = 'none';
+        }
+    });
+
+    uploadButton.addEventListener('click', async () => {
+        if (!sessionId || !imageInput.files[0]) {
+            uploadStatus.innerText = '세션 오류 또는 파일 미선택.';
+            return;
+        }
+
+        uploadStatus.innerText = '업로드 중...';
+        uploadButton.disabled = true;
+
+        const formData = new FormData();
+        formData.append('image', imageInput.files[0]);
+        formData.append('sessionId', sessionId);
+
+        try {
+            const response = await fetch('/upload-image', {
+                method: 'POST',
+                body: formData
+            });
+            if (response.ok) {
+                uploadStatus.innerText = '업로드 성공! PC 화면을 확인하세요.';
+            } else {
+                const result = await response.json();
+                uploadStatus.innerText = `업로드 실패: ${result.message || '서버 오류'}`;
+            }
+        } catch (error) {
+            uploadStatus.innerText = '업로드 중 네트워크 오류가 발생했습니다.';
+        } finally {
+            uploadButton.disabled = false;
+        }
+    });
+</script>
+</body>
+</html>

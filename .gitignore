@@ -1,0 +1,14 @@
+# dependencies
+/node_modules
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+
+# IDE files
+.idea
+*.iml
+
+# Uploaded files (서버에서 생성되는 파일)
+/uploads
+/transformed
