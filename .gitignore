@@ -10,5 +10,5 @@ yarn-debug.log*
 *.iml
 
 # Uploaded files (서버에서 생성되는 파일)
-/uploads
-/transformed
+/public/uploads
+/public/transformed
