@@ -5,119 +5,207 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI 이미지 스튜디오</title>
     <link rel="stylesheet" href="style.css">
-    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body>
-
 <div class="container">
     <h1>🎨 AI 이미지 변환/생성 스튜디오</h1>
 
     <div class="mode-selector">
-        <button class="btn mode-btn" data-mode="image">📷 이미지 변환</button>
+        <button class="btn mode-btn active" data-mode="image">📷 이미지 변환 (PC)</button>
         <button class="btn mode-btn" data-mode="text">📝 텍스트 생성</button>
-        <button class="btn mode-btn" data-mode="qr">📱 QR 코드 스캔/업로드</button>
+        <button class="btn mode-btn" data-mode="qr">📱 QR 업로드 (Mobile)</button>
     </div>
 
-    <section id="qrMode" class="section-box mode-content" style="display: none;">
-        <h3>📱 QR 코드 스캔 및 처리</h3>
-        <div id="qr-reader" style="width: 100%;"></div>
-        <p id="qrResultStatus" class="status-text"></p>
-        <p class="status-text note">QR 스캔은 카메라 접근 권한이 필요하며, 보안상의 이유로 HTTPS 환경에서만 작동할 수 있습니다.</p>
-    </section>
-
-    <section id="imageMode" class="section-box mode-content" style="display: none;">
+    <section id="imageMode" class="section-box mode-content">
+        <h3>📷 내 PC 파일로 변환</h3>
+        <input type="file" accept="image/*" name="pcImage" id="fileUploader" style="display: none;">
+        <button id="uploadButton" class="btn primary-btn">PC 파일 선택</button>
+        <img id="originalImage" alt="업로드된 원본 이미지" class="preview-img" style="display: none;">
+        <p id="fileStatus" class="status-text"></p>
     </section>
 
     <section id="textMode" class="section-box mode-content" style="display: none;">
+        <h3>📝 텍스트로 이미지 생성</h3>
+        <textarea id="textPromptInput" placeholder="생성하고 싶은 이미지를 상세히 설명하세요..." rows="3" class="input-full"></textarea>
     </section>
 
-    <section id="commonAISettings" class="section-box" style="display: none;">
+    <section id="qrMode" class="section-box mode-content" style="display: none;">
+        <h3>📱 모바일 사진 전송 (QR 브리지)</h3>
+
+        <button id="qrUploadStartButton" class="btn primary-btn">QR 코드 생성 시작</button>
+
+        <div id="qrBridgeArea" style="display: none; text-align: center;">
+            <h4>모바일 업로드 대기 중...</h4>
+            <div id="qrcode" class="qr-box"></div>
+            <p id="qrBridgeStatus" class="status-text note">모바일로 위 QR 코드를 스캔하여 사진을 전송하세요.</p>
+            <button id="cancelQrButton" class="btn secondary-btn">취소</button>
+        </div>
+
+        <img id="qrOriginalImage" alt="QR로 업로드된 이미지" class="preview-img" style="display: none;">
+        <p id="qrFileStatus" class="status-text"></p>
     </section>
 
+    <section id="commonAISettings" class="section-box">
+        <h3>공통 AI 설정</h3>
+        <textarea id="stylePromptInput" placeholder="AI 스타일 추가 설명..." rows="2" class="input-full"></textarea>
+        <select id="styleSelect" class="input-full">
+            <option value="default">스타일 선택 (선택 사항)</option>
+            <option value="cartoon">카툰 스타일</option>
+            <option value="oilpainting">유화 스타일</option>
+        </select>
+
+        <button id="aiConvertButton" class="btn secondary-btn">✨ AI로 변환/생성하기</button>
+
+        <p id="loadingStatus" class="status-text" style="display: none;">AI 이미지 생성 중입니다. 잠시만 기다려주세요...</p>
+    </section>
 </div>
 
 <script>
-    // 전역 변수 설정
     let currentMode = 'image';
-    let uploadedFile = null;
-    let html5QrCode = null; // QR 스캐너 객체
+    let pcUploadedFile = null;
+    let qrUploadedFileName = null;
+    let currentSessionId = null;
+    let pollingInterval = null;
 
-    document.addEventListener('DOMContentLoaded', () => {
-        // ... (요소 변수 선언 생략)
+    const fileUploader = document.getElementById('fileUploader');
+    const uploadButton = document.getElementById('uploadButton');
+    const originalImage = document.getElementById('originalImage');
+    const fileStatus = document.getElementById('fileStatus');
+    const qrUploadStartButton = document.getElementById('qrUploadStartButton');
+    const qrBridgeArea = document.getElementById('qrBridgeArea');
+    const qrcodeDiv = document.getElementById('qrcode');
+    const qrBridgeStatus = document.getElementById('qrBridgeStatus');
+    const cancelQrButton = document.getElementById('cancelQrButton');
+    const qrOriginalImage = document.getElementById('qrOriginalImage');
+    const qrFileStatus = document.getElementById('qrFileStatus');
 
-        // 모드 전환 로직
-        document.querySelectorAll('.mode-btn').forEach(button => {
-            button.addEventListener('click', () => {
-                const prevMode = currentMode;
-                currentMode = button.dataset.mode;
+    // --- 모드 전환 로직 ---
+    document.querySelectorAll('.mode-btn').forEach(button => {
+        button.addEventListener('click', () => {
+            currentMode = button.dataset.mode;
+            document.querySelectorAll('.mode-content').forEach(content => content.style.display = 'none');
+            document.getElementById(currentMode + 'Mode').style.display = 'block';
+            document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+            button.classList.add('active');
 
-                document.querySelectorAll('.mode-content').forEach(content => {
-                    content.style.display = 'none';
-                });
-                document.getElementById(currentMode + 'Mode').style.display = 'block';
-                document.getElementById('commonAISettings').style.display = 'block';
-                document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
-                button.classList.add('active');
-
-                // [수정] QR 모드 진입/이탈 시 카메라 제어
-                if (prevMode === 'qr' && html5QrCode) {
-                    // 다른 모드로 전환 시 스캐너 중지
-                    html5QrCode.stop().then(ignore => {
-                        console.log("QR scanning stopped.");
-                    }).catch(err => {
-                        console.log("Error stopping QR scanning:", err);
-                    });
-                }
-                if (currentMode === 'qr') {
-                    // QR 모드 진입 시 스캐너 시작
-                    initializeQrScanner();
-                }
-            });
+            // 모드 전환 시 이전 QR 폴링 중지
+            if (pollingInterval) clearInterval(pollingInterval);
+            qrBridgeArea.style.display = 'none';
+            qrUploadStartButton.style.display = 'inline-block';
         });
+    });
 
-        // ... (파일 업로드 로직은 동일) ...
+    // --- 1. PC 업로드 로직 ---
+    uploadButton.addEventListener('click', () => fileUploader.click());
+    fileUploader.addEventListener('change', (event) => {
+        pcUploadedFile = event.target.files[0];
+        qrUploadedFileName = null; // 다른 업로드 모드 초기화
 
-        // [추가] QR 스캐너 초기화 함수
-        function initializeQrScanner() {
-            if (!html5QrCode) {
-                html5QrCode = new Html5Qrcode("qr-reader");
-            }
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            originalImage.src = e.target.result;
+            originalImage.style.display = 'block';
+            fileStatus.textContent = `선택된 파일: ${pcUploadedFile.name}`;
+            qrOriginalImage.style.display = 'none';
+        };
+        reader.readAsDataURL(pcUploadedFile);
+    });
 
-            // 스캐너 설정
-            const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+    // --- 3. QR 업로드 로직 ---
+    qrUploadStartButton.addEventListener('click', startQrUploadSession);
+    cancelQrButton.addEventListener('click', cancelQrUploadSession);
 
-            // 스캐너 시작
-            html5QrCode.start(
-                { facingMode: "environment" }, // 후면 카메라 사용
-                config,
-                (decodedText, decodedResult) => {
-                    // QR 코드 스캔 성공!
-                    document.getElementById('qrResultStatus').textContent = `스캔 성공: ${decodedText.substring(0, 30)}...`;
+    async function startQrUploadSession() {
+        const response = await fetch('/api/start-upload-session');
+        const data = await response.json();
+        currentSessionId = data.sessionId;
+        const baseUrl = data.origin;
 
-                    // 스캔된 텍스트를 Text-to-Image 모드의 프롬프트로 자동 입력
-                    document.getElementById('textPromptInput').value = decodedText;
+        if (!currentSessionId) return alert('세션을 시작할 수 없습니다.');
 
-                    // [자동 전환] 텍스트가 스캔되었으므로 Text 모드로 자동 전환하여 AI 설정 진행
-                    document.querySelector('.mode-btn[data-mode="text"]').click();
-                    alert(`QR 코드 스캔 성공! 텍스트가 AI 프롬프트에 자동 입력되었습니다.`);
+        // UI 업데이트
+        qrBridgeArea.style.display = 'block';
+        qrUploadStartButton.style.display = 'none';
 
-                    html5QrCode.stop(); // 스캔 성공 후 카메라 중지
-                },
-                (errorMessage) => {
-                    // 스캔 진행 중 (오류 메시지는 무시)
-                    document.getElementById('qrResultStatus').textContent = "QR 코드를 중앙에 맞춰주세요.";
-                }
-            ).catch((err) => {
-                document.getElementById('qrResultStatus').textContent = `카메라 접근 오류 또는 지원되지 않는 환경: ${err}`;
-                console.error("QR Scanner Start Error:", err);
-            });
+        // QR 코드 생성 (upload.html 파일과 세션 ID를 포함)
+        const mobileUploadUrl = `${baseUrl}/upload.html?id=${currentSessionId}`;
+        qrcodeDiv.innerHTML = '';
+        new QRCode(qrcodeDiv, { text: mobileUploadUrl, width: 150, height: 150 });
+        qrBridgeStatus.textContent = "모바일로 QR 코드를 스캔하세요.";
+
+        // 폴링 시작
+        pollingInterval = setInterval(checkUploadStatus, 1000);
+    }
+
+    async function checkUploadStatus() {
+        if (!currentSessionId) return;
+
+        const response = await fetch(`/api/check-upload-status/${currentSessionId}`);
+        const data = await response.json();
+
+        if (data.status === 'uploaded') {
+            clearInterval(pollingInterval);
+            currentSessionId = null;
+
+            qrUploadedFileName = data.fileInfo.fileName;
+            pcUploadedFile = null;
+
+            // QR 업로드된 이미지 표시 (서버에서 파일 경로 직접 로드)
+            qrOriginalImage.src = `/images/uploads/${qrUploadedFileName}`;
+            qrOriginalImage.style.display = 'block';
+            qrFileStatus.textContent = `업로드 완료: ${data.fileInfo.originalName}`;
+
+            qrBridgeArea.style.display = 'none';
+            qrUploadStartButton.style.display = 'inline-block';
+            alert('모바일 파일 업로드 완료! AI 변환을 시작해주세요.');
+        }
+    }
+
+    function cancelQrUploadSession() {
+        if (pollingInterval) clearInterval(pollingInterval);
+        currentSessionId = null;
+        qrBridgeArea.style.display = 'none';
+        qrUploadStartButton.style.display = 'inline-block';
+    }
+
+    // --- AI 변환 버튼 클릭 시 (통합 로직) ---
+    document.getElementById('aiConvertButton').addEventListener('click', async () => {
+        let prompt = document.getElementById('textPromptInput').value; // Text Mode 프롬프트
+        const style = document.getElementById('styleSelect').value;
+        const stylePrompt = document.getElementById('stylePromptInput').value;
+
+        const formData = new FormData();
+        formData.append('prompt', prompt + (stylePrompt ? ', ' + stylePrompt : ''));
+        formData.append('style', style);
+        formData.append('mode', currentMode);
+
+        // 입력 데이터 검증 및 FormData 설정
+        if (currentMode === 'image' && pcUploadedFile) {
+            formData.append('pcImage', pcUploadedFile);
+        } else if (currentMode === 'qr' && qrUploadedFileName) {
+            formData.append('qrUploadedFileName', qrUploadedFileName);
+        } else if (currentMode === 'text' && prompt) {
+            // Text to Image: 파일 필요 없음
+        } else {
+            return alert(`[${currentMode} 모드]에 필요한 입력이 부족합니다.`);
         }
 
-        // 초기 모드 설정
-        document.querySelector('.mode-btn[data-mode="image"]').click();
+        // ... (로딩 상태 표시 및 fetch 호출 로직 유지) ...
+        try {
+            const response = await fetch('/api/ai-process', { method: 'POST', body: formData });
+            const data = await response.json();
 
-        // ... (AI 변환 버튼 클릭 시 로직은 이전 코드와 동일) ...
+            if (data.aiImageUrl) {
+                window.location.href = `download.html?url=${encodeURIComponent(data.aiImageUrl)}`;
+            } else {
+                alert('AI 변환 결과 URL을 받지 못했습니다.');
+            }
+        } catch(e) { /* ... */ }
     });
+
+    // 초기 모드 활성화 (PC 이미지 변환)
+    document.querySelector('.mode-btn[data-mode="image"]').click();
 </script>
 </body>
 </html>

@@ -3,78 +3,73 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>이미지 업로드</title>
-    <link rel="stylesheet" href="style.css">
+    <title>모바일 파일 업로드</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; padding: 20px; }
+        h1 { color: #007bff; }
+        .container { max-width: 400px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px; }
+        .btn-upload { display: block; width: 100%; padding: 10px; background-color: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer; margin-top: 20px; }
+        #fileInput { display: none; }
+    </style>
 </head>
 <body>
 <div class="container">
-    <h1>내 사진 업로드</h1>
-    <p>선택 후 업로드 버튼을 누르세요. (갤러리 또는 즉석 촬영 가능)</p>
-    <input type="file" id="imageInput" accept="image/*" capture="user">
+    <h1>📸 PC로 사진 전송</h1>
+    <p id="sessionIdDisplay"></p>
 
-    <img id="previewImage" src="" alt="이미지 미리보기" style="max-width: 100%; display: none; margin-top: 10px;">
-    <button id="uploadButton">업로드</button>
-    <p id="uploadStatus"></p>
+    <form id="mobileUploadForm" enctype="multipart/form-data">
+        <input type="file" name="mobileImage" id="fileInput" accept="image/*" required>
+
+        <label for="fileInput" class="btn-upload">사진 선택 (앨범/카메라)</label>
+        <p id="fileNameDisplay" style="margin-top: 10px; color: #555;">선택된 파일 없음</p>
+
+        <button type="submit" class="btn-upload" style="background-color: #007bff;">업로드 시작</button>
+    </form>
 </div>
 
 <script>
-    const imageInput = document.getElementById('imageInput');
-    const uploadButton = document.getElementById('uploadButton');
-    const uploadStatus = document.getElementById('uploadStatus');
-    const previewImage = document.getElementById('previewImage');
-
     const urlParams = new URLSearchParams(window.location.search);
-    const sessionId = urlParams.get('sessionId');
+    const sessionId = urlParams.get('id');
+
+    const form = document.getElementById('mobileUploadForm');
 
     if (!sessionId) {
-        uploadStatus.innerText = '세션 오류. 다시 스캔해 주세요.';
-        uploadButton.disabled = true;
-    }
+        document.body.innerHTML = '<h1>오류</h1><p>이 페이지는 QR 코드 스캔을 통해서만 접근 가능합니다. (유효한 세션 ID가 필요합니다.)</p>';
+    } else {
+        document.getElementById('sessionIdDisplay').textContent = `연결 세션 ID: ${sessionId.substring(0, 8)}...`;
 
-    imageInput.addEventListener('change', (event) => {
-        const file = event.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                previewImage.src = e.target.result;
-                previewImage.style.display = 'block';
-            };
-            reader.readAsDataURL(file);
-        } else {
-            previewImage.style.display = 'none';
-        }
-    });
+        const fileInput = document.getElementById('fileInput');
+        const fileNameDisplay = document.getElementById('fileNameDisplay');
 
-    uploadButton.addEventListener('click', async () => {
-        if (!sessionId || !imageInput.files[0]) {
-            uploadStatus.innerText = '세션 오류 또는 파일 미선택.';
-            return;
-        }
-
-        uploadStatus.innerText = '업로드 중...';
-        uploadButton.disabled = true;
-
-        const formData = new FormData();
-        formData.append('image', imageInput.files[0]);
-        formData.append('sessionId', sessionId);
-
-        try {
-            const response = await fetch('/upload-image', {
-                method: 'POST',
-                body: formData
-            });
-            if (response.ok) {
-                uploadStatus.innerText = '업로드 성공! PC 화면을 확인하세요.';
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                fileNameDisplay.textContent = `선택된 파일: ${e.target.files[0].name}`;
             } else {
-                const result = await response.json();
-                uploadStatus.innerText = `업로드 실패: ${result.message || '서버 오류'}`;
+                fileNameDisplay.textContent = '선택된 파일 없음';
             }
-        } catch (error) {
-            uploadStatus.innerText = '업로드 중 네트워크 오류가 발생했습니다.';
-        } finally {
-            uploadButton.disabled = false;
-        }
-    });
+        });
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(form);
+
+            try {
+                const response = await fetch(`/api/mobile-upload/${sessionId}`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.ok) {
+                    const htmlResponse = await response.text();
+                    document.body.innerHTML = htmlResponse;
+                } else {
+                    alert(`업로드 실패: ${response.statusText}`);
+                }
+            } catch (error) {
+                alert('네트워크 오류로 업로드에 실패했습니다.');
+            }
+        });
+    }
 </script>
 </body>
 </html>
