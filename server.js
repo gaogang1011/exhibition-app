@@ -9,7 +9,7 @@ const { OpenAI } = require('openai'); // ⭐️ 새로 추가
 const fetch = require('node-fetch'); // ⭐️ 새로 추가 (이미지 다운로드용)
 
 const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY || "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",
+    apiKey: process.env.OPENAI_API_KEY,
 });
 
 const app = express();
