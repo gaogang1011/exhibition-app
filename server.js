@@ -5,6 +5,12 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
+const { OpenAI } = require('openai'); // ⭐️ 새로 추가
+const fetch = require('node-fetch'); // ⭐️ 새로 추가 (이미지 다운로드용)
+
+const openai = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY || "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",
+});
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -110,39 +116,68 @@ app.get('/api/check-upload-status/:sessionId', (req, res) => {
 // AI 처리 API (모든 모드 통합)
 // ===================================================
 app.post('/api/ai-process', upload.single('pcImage'), async (req, res) => {
-    // pcImage는 PC 업로드 모드에서만 req.file로 들어옵니다.
+    // ... (req.body 및 inputImagePath 설정 로직 유지) ...
     const { prompt, style, mode, qrUploadedFileName } = req.body;
     let inputImagePath = null;
 
     try {
-        if (mode === 'image' && req.file) { // 1. PC 업로드 Image to Image
+        // --- 1. 입력 경로 및 유효성 검사 (유지) ---
+        if (mode === 'image' && req.file) {
             inputImagePath = req.file.path;
-        } else if (mode === 'qr' && qrUploadedFileName) { // 3. QR 업로드 Image to Image
+        } else if (mode === 'qr' && qrUploadedFileName) {
             inputImagePath = path.join(UPLOADS_PATH, qrUploadedFileName);
-        } else if (mode === 'text') { // 2. Text to Image
+        } else if (mode === 'text') {
             // 파일 입력 필요 없음
         } else {
             return res.status(400).json({ error: '필수 입력 데이터가 부족하거나 모드가 일치하지 않습니다.' });
         }
 
-        // [AI 처리 가상화]
-        console.log(`AI 요청 모드: ${mode}, 프롬프트: ${prompt}, 파일 경로: ${inputImagePath}`);
-        const aiImageBuffer = Buffer.from(`AI RESULT FOR ${prompt}`, 'utf8');
+        // --- 2. OpenAI DALL-E 호출 및 URL 획득 ---
+        let finalPrompt = `${prompt} (${style})`;
 
-        // AI 결과 이미지 저장
-        const finalFileName = `ai_result_${uuidv4()}.png`;
+        // Image to Image 기능 구현 시, DALL-E 3는 직접적인 Image-to-Image 변환을 지원하지 않으므로,
+        // 프롬프트에 이미지 내용을 포함하도록 유도합니다 (Text-Guided Image Generation).
+
+        const response = await openai.images.generate({
+            model: "dall-e-3",
+            prompt: finalPrompt,
+            n: 1,
+            size: "1024x1024",
+            response_format: 'url', // URL로 결과 받기
+        });
+
+        const imageUrl = response.data[0].url; // AI가 생성한 이미지의 임시 URL
+
+        // --- 3. [오류 수정] 이미지 URL에서 Buffer로 다운로드 및 저장 ---
+
+        const imageResponse = await fetch(imageUrl);
+
+        if (!imageResponse.ok) {
+            throw new Error(`Failed to download image from OpenAI URL: ${imageResponse.statusText}`);
+        }
+
+        // 다운로드 받은 이미지를 Buffer로 변환합니다. (aiImageBuffer 정의)
+        const aiImageBuffer = Buffer.from(await imageResponse.arrayBuffer());
+
+        // --- 4. [오류 수정] 파일 저장 경로 설정 및 저장 ---
+
+        // finalFileName, finalSavePath 정의
+        const finalFileName = `ai_result_${uuidv4()}.png`; // PNG 확장자로 저장
         const finalSavePath = path.join(IMAGES_PATH, finalFileName);
 
-        // fs.writeFileSync(finalSavePath, aiImageBuffer); // 실제 AI 이미지 저장
-        fs.writeFileSync(finalSavePath, 'DUMMY AI RESULT', 'utf8'); // 테스트용
+        // [파일 저장] Buffer를 파일 시스템에 씁니다.
+        fs.writeFileSync(finalSavePath, aiImageBuffer);
 
+        // --- 5. [오류 수정] 클라이언트 반환 URL 설정 ---
+
+        // aiImageUrl 정의 (클라이언트가 접근 가능한 경로)
         const aiImageUrl = `/images/${finalFileName}`;
 
         res.json({ aiImageUrl: aiImageUrl });
 
     } catch (error) {
-        console.error('AI 처리 중 오류:', error);
-        res.status(500).json({ error: 'AI 이미지 생성에 실패했습니다.' });
+        console.error('AI 처리 중 오류 발생 (server.js):', error);
+        res.status(500).json({ error: 'AI 이미지 생성에 실패했습니다. 서버 로그를 확인하세요.', details: error.message });
     }
 });
 
