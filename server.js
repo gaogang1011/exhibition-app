@@ -48,7 +48,6 @@ app.use(express.json());
 
 // ===================================================
 // 보조 함수: 이미지를 Base64로 인코딩 (Vision API 사용을 위해 필요)
-// [수정] 파일 타입 검사 및 MIME Type 반환 로직 포함
 // ===================================================
 function imageToBase64(filePath) {
     if (!fs.existsSync(filePath)) {
@@ -79,7 +78,7 @@ function imageToBase64(filePath) {
 }
 
 // ===================================================
-// PC-모바일 브리지 API
+// PC-모바일 브리지 API (유지)
 // ===================================================
 
 app.get('/api/start-upload-session', (req, res) => {
@@ -95,10 +94,7 @@ app.get('/upload.html', (req, res) => {
     }
     const uploadFilePath = path.join(__dirname, 'public', 'upload.html');
     fs.readFile(uploadFilePath, 'utf8', (err, data) => {
-        if (err) {
-            console.error('Error reading upload.html:', err);
-            return res.status(500).send('서버 오류: 폼을 로드할 수 없습니다.');
-        }
+        if (err) return res.status(500).send('서버 오류: 폼을 로드할 수 없습니다.');
         res.send(data);
     });
 });
@@ -131,7 +127,7 @@ app.get('/api/check-upload-status/:sessionId', (req, res) => {
 });
 
 // ===================================================
-// AI 처리 API (GPT-4o Vision 및 DALL-E 3 통합)
+// AI 처리 API (프롬프트 최적화)
 // ===================================================
 app.post('/api/ai-process', upload.single('pcImage'), async (req, res) => {
     const { prompt, style, mode, qrUploadedFileName } = req.body;
@@ -149,10 +145,12 @@ app.post('/api/ai-process', upload.single('pcImage'), async (req, res) => {
             return res.status(400).json({ error: '필수 입력 데이터가 부족하거나 모드가 일치하지 않습니다.' });
         }
 
+        let visionDescription = "";
+
         // --- GPT-4o Vision을 사용한 이미지 분석 ---
         if ((mode === 'image' || mode === 'qr') && inputImagePath) {
 
-            const { base64, mimeType } = imageToBase64(inputImagePath); // Base64와 MIME Type 획득
+            const { base64, mimeType } = imageToBase64(inputImagePath);
 
             // 1. GPT-4o Vision API 호출
             const visionResponse = await openai.chat.completions.create({
@@ -160,17 +158,17 @@ app.post('/api/ai-process', upload.single('pcImage'), async (req, res) => {
                 messages: [
                     {
                         role: "system",
-                        // [최종 수정] 정책 위반을 피하기 위해 사람을 'figure'로 묘사하고, DALL-E 생성을 위한 원본 프롬프트로만 사용하도록 지시.
-                        content: "You are an expert AI image describer specialized in creating base prompts for DALL-E. Analyze the visual elements of the photo (main subject, pose, lighting, colors, background structure). The output MUST be a single, detailed English sentence, optimizing for image structure and composition retention. Do not add any stylistic terms. If the subject is a person, describe them only as a 'humanoid figure' or 'character' and avoid specific identifiers or demographics.",
+                        // [수정] DALL-E에게 필요한 상세 묘사만 요청하며 인물 식별 정보 회피
+                        content: "You are an expert AI image analyzer. Describe ONLY the core visual elements needed for image generation (composition, subject, pose, background, colors, lighting). Do NOT mention any style, art medium, or names. If the subject is a person, describe them ONLY as a 'character' or 'figure' and avoid specific identifiers.",
                     },
                     {
                         role: "user",
                         content: [
-                            { type: "text", text: "Describe this photo concisely for style conversion." },
+                            { type: "text", text: "Analyze this photo and provide a concise, detailed description for style conversion." },
                             {
                                 type: "image_url",
                                 image_url: {
-                                    url: `data:${mimeType};base64,${base64}`, // MIME Type 명시 (핵심 수정)
+                                    url: `data:${mimeType};base64,${base64}`,
                                     detail: "high"
                                 },
                             },
@@ -180,17 +178,23 @@ app.post('/api/ai-process', upload.single('pcImage'), async (req, res) => {
                 max_tokens: 300,
             });
 
-            const visionDescription = visionResponse.choices[0].message.content.trim();
-
-            // 2. Vision 분석 결과와 사용자 프롬프트를 결합 (Image-to-Image 시뮬레이션)
-            basePrompt = `TRANSFORM this image structure: (${visionDescription}). User's style request: ${basePrompt}`;
+            visionDescription = visionResponse.choices[0].message.content.trim();
         }
 
-        // --- DALL-E 3 이미지 생성 ---
+        // --- DALL-E 3 이미지 생성 (프롬프트 재구성) ---
 
-        let finalPrompt = `${basePrompt}. Convert it into ${style} style. Preserve the original composition and color palette as closely as possible. Highly detailed and professional quality.`;
-        if (style === 'default' || !style) {
-            finalPrompt = `${basePrompt}. Highly detailed and professional quality.`;
+        let finalPrompt = basePrompt;
+
+        if (mode === 'image' || mode === 'qr') {
+            // [최종 최적화] DALL-E에게 '변환'을 강제하는 강력한 프롬프트 구조 사용
+            finalPrompt =
+                `Based on the content described: "${visionDescription}". ` +
+                `The user wants to transform this exact composition into the requested style. ` +
+                `Maintain the subject's pose, the overall composition, and the color scheme. ` +
+                `Style: ${style}. User refinement: ${basePrompt}. Highly detailed, photorealistic quality.`;
+        } else {
+            // 텍스트 모드
+            finalPrompt = `${basePrompt} in ${style} style. Highly detailed and cinematic quality.`;
         }
 
         const response = await openai.images.generate({
@@ -229,7 +233,7 @@ app.post('/api/ai-process', upload.single('pcImage'), async (req, res) => {
         // 정책 위반 에러 감지 및 사용자 친화적인 메시지 반환
         if (error.code === 'content_policy_violation' || (error.status === 400 && error.error && error.error.code === 'content_policy_violation')) {
             errorMessage = '⚠️ 콘텐츠 정책 위반: 입력하신 내용이나 분석된 이미지에 부적절한 내용이 포함되어 거부되었습니다. 원본 이미지나 프롬프트 내용을 확인해주세요.';
-        } else if (error.message.includes('파일을 찾을 수 없습니다') || error.message.includes('Base64로 인코딩할 수 없습니다')) {
+        } else if (error.message.includes('파일을 찾을 수 없습니다')) {
             errorMessage = '원본 이미지 처리 중 오류가 발생했습니다. 유효한 이미지 파일을 업로드했는지 확인해주세요.';
         }
 
@@ -238,7 +242,7 @@ app.post('/api/ai-process', upload.single('pcImage'), async (req, res) => {
             details: error.message
         });
     }
-} /* finally { ... } 제거하여 오류 추적 단순화 */);
+});
 
 // ===================================================
 // 다운로드 강제 API (유지)
