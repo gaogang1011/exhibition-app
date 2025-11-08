@@ -7,6 +7,8 @@
     <link rel="stylesheet" href="style.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+    <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
 </head>
 <body>
 <div class="container">
@@ -86,7 +88,6 @@
     const qrOriginalImage = document.getElementById('qrOriginalImage');
     const qrFileStatus = document.getElementById('qrFileStatus');
 
-    // --- 모드 전환 로직 ---
     document.querySelectorAll('.mode-btn').forEach(button => {
         button.addEventListener('click', () => {
             currentMode = button.dataset.mode;
@@ -101,7 +102,6 @@
         });
     });
 
-    // --- 1. PC 업로드 로직 ---
     uploadButton.addEventListener('click', () => fileUploader.click());
     fileUploader.addEventListener('change', (event) => {
         pcUploadedFile = event.target.files[0];
@@ -117,7 +117,6 @@
         reader.readAsDataURL(pcUploadedFile);
     });
 
-    // --- 3. QR 업로드 로직 ---
     qrUploadStartButton.addEventListener('click', startQrUploadSession);
     cancelQrButton.addEventListener('click', cancelQrUploadSession);
 
@@ -170,7 +169,6 @@
         qrUploadStartButton.style.display = 'inline-block';
     }
 
-    // --- AI 변환 버튼 클릭 시 (통합 로직) ---
     document.getElementById('aiConvertButton').addEventListener('click', async () => {
         let prompt = document.getElementById('textPromptInput').value;
         const style = document.getElementById('styleSelect').value;
