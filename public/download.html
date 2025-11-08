@@ -5,16 +5,30 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>다운로드 완료</title>
     <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        .qr-box {
+            margin: 30px auto;
+            padding: 15px;
+            border: 3px solid #007bff;
+            display: inline-block;
+            background-color: white;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+    </style>
 </head>
 <body>
 
 <div class="container">
     <h2>🎉 AI 변환 완료!</h2>
 
-    <img id="finalImage" alt="AI 변환 결과 이미지" class="final-image">
+    <div id="qrcode" class="qr-box"></div>
+    <p class="status-text note">모바일로 위 QR 코드를 스캔하여 이미지를 즉시 다운로드하세요.</p>
+
+    <img id="finalImage" alt="AI 변환 결과 이미지" class="preview-img" style="display: none;">
 
     <a id="downloadLink" class="btn download-link" **download="my_ai_art.png"** href="#">
-        ⬇️ 이미지 파일 저장
+        ⬇️ 이미지 파일 저장 (PC 다운로드용)
     </a>
 
     <a href="index.html" class="btn go-back-btn">
@@ -30,14 +44,27 @@
         if (aiImageUrl) {
             const decodedUrl = decodeURIComponent(aiImageUrl);
 
-            document.getElementById('finalImage').src = decodedUrl;
-
+            // 1. 다운로드 링크 설정
             const downloadLink = document.getElementById('downloadLink');
             downloadLink.href = decodedUrl;
 
+            // 2. **[핵심 복구 로직]** URL을 QR 코드로 생성
+            new QRCode(document.getElementById("qrcode"), {
+                text: decodedUrl, // AI 이미지 URL을 QR 코드로 변환
+                width: 200,
+                height: 200,
+                colorDark : "#000000",
+                colorLight : "#ffffff",
+                correctLevel : QRCode.CorrectLevel.H
+            });
+
+            // (선택 사항: 이미지를 페이지에 표시하고 싶다면 아래 주석을 해제)
+            // document.getElementById('finalImage').src = decodedUrl;
+            // document.getElementById('finalImage').style.display = 'block';
+
         } else {
             alert('이미지 정보를 찾을 수 없어 원본 페이지로 돌아갑니다.');
-            window.location.href = 'index.html'; // 정보가 없으면 복귀
+            window.location.href = 'index.html';
         }
     });
 </script>
