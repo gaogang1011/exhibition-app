@@ -73,13 +73,37 @@
 
     <div class="card action-area">
         <button id="aiConvertButton" class="btn action-btn full-width">✨ GENERATE</button>
-
-        <div id="loadingAnimation" class="loading-animation" style="display: none;">
-            <img src="brush_loading_bw.gif" alt="Processing..." class="loading-gif">
-            <p class="loading-text">PROCESSING...</p>
-        </div>
     </div>
 </div>
+
+<div id="fullScreenLoading" class="full-screen-loading" style="display: none;">
+    <img src="brush_loading_bw.gif" alt="Processing..." class="loading-gif-full">
+    <p class="loading-text-full">PROCESSING...</p>
+</div>
+
+<div id="resultDisplay" class="result-display-overlay" style="display: none;">
+    <div class="result-card">
+        <h2>✨ GENERATION COMPLETE</h2>
+        <img id="finalImagePreview" alt="AI 결과 이미지" class="preview-img">
+
+        <div class="size-select-wrapper">
+            <label for="resolutionSelect">Download Size:</label>
+            <select id="resolutionSelect">
+                <option value="large">Large (Original 1024px)</option>
+                <option value="medium">Medium (1024px, Optimized)</option>
+                <option value="small">Small (512px)</option>
+            </select>
+        </div>
+
+        <a id="downloadLink" class="btn download-link" download="my_ai_art.png" href="#">
+            <i class="fas fa-download"></i> SAVE TO PC
+        </a>
+        <button id="closeResultButton" class="btn go-back-btn">
+            ↩️ START NEW GENERATION
+        </button>
+    </div>
+</div>
+
 
 <script>
     let currentMode = 'image';
@@ -87,6 +111,7 @@
     let qrUploadedFileName = null;
     let currentSessionId = null;
     let pollingInterval = null;
+    let generatedImageUrl = null; // ⭐️ [추가] 생성된 이미지 URL 저장
 
     const fileUploader = document.getElementById('fileUploader');
     const uploadButton = document.getElementById('uploadButton');
@@ -99,9 +124,15 @@
     const cancelQrButton = document.getElementById('cancelQrButton');
     const qrOriginalImage = document.getElementById('qrOriginalImage');
     const qrFileStatus = document.getElementById('qrFileStatus');
-    const loadingAnimation = document.getElementById('loadingAnimation');
 
-    // --- 모드 전환 로직 ---
+    const fullScreenLoading = document.getElementById('fullScreenLoading'); // ⭐️ [추가] 전체 화면 로딩 요소
+    const resultDisplay = document.getElementById('resultDisplay'); // ⭐️ [추가] 결과 표시 오버레이
+    const finalImagePreview = document.getElementById('finalImagePreview'); // ⭐️ [추가] 결과 이미지 태그
+    const resolutionSelect = document.getElementById('resolutionSelect'); // ⭐️ [추가] 해상도 선택
+    const downloadLink = document.getElementById('downloadLink'); // ⭐️ [추가] 다운로드 링크
+    const closeResultButton = document.getElementById('closeResultButton'); // ⭐️ [추가] 닫기 버튼
+
+    // --- 모드 전환 로직 (기존과 동일) ---
     document.querySelectorAll('.mode-btn').forEach(button => {
         button.addEventListener('click', () => {
             currentMode = button.dataset.mode;
@@ -116,7 +147,7 @@
         });
     });
 
-    // --- 1. PC 업로드 로직 ---
+    // --- 1. PC 업로드 로직 (기존과 동일) ---
     uploadButton.addEventListener('click', () => fileUploader.click());
     fileUploader.addEventListener('change', (event) => {
         pcUploadedFile = event.target.files[0];
@@ -132,7 +163,7 @@
         reader.readAsDataURL(pcUploadedFile);
     });
 
-    // --- 3. QR 업로드 로직 ---
+    // --- 3. QR 업로드 로직 (기존과 동일) ---
     qrUploadStartButton.addEventListener('click', startQrUploadSession);
     cancelQrButton.addEventListener('click', cancelQrUploadSession);
 
@@ -206,7 +237,7 @@
             return alert(`[${currentMode} Mode] Missing input.`);
         }
 
-        loadingAnimation.style.display = 'block';
+        fullScreenLoading.style.display = 'flex'; // ⭐️ [수정] 전체 화면 로딩 표시
 
         try {
             const response = await fetch('/api/ai-process', { method: 'POST', body: formData });
@@ -220,7 +251,17 @@
             const data = await response.json();
 
             if (data.aiImageUrl) {
-                window.location.href = `download.html?url=${encodeURIComponent(data.aiImageUrl)}`;
+                generatedImageUrl = data.aiImageUrl; // ⭐️ [추가] 생성된 이미지 URL 저장
+                finalImagePreview.src = generatedImageUrl; // ⭐️ [추가] 결과 이미지 미리보기에 설정
+                updateDownloadLinks(); // ⭐️ [추가] 다운로드 링크 업데이트 (기본 해상도로)
+
+                fullScreenLoading.classList.add('fade-out'); // ⭐️ [추가] 페이드 아웃 애니메이션 시작
+                fullScreenLoading.addEventListener('animationend', () => {
+                    fullScreenLoading.style.display = 'none';
+                    fullScreenLoading.classList.remove('fade-out');
+                    resultDisplay.style.display = 'flex'; // ⭐️ [추가] 결과 표시 오버레이를 보여줌
+                }, { once: true });
+
             } else {
                 alert('Result URL not received.');
             }
@@ -228,8 +269,29 @@
             alert('Network error.');
             console.error("Fetch/System Error:", e);
         } finally {
-            loadingAnimation.style.display = 'none';
+            // fullScreenLoading.style.display = 'none'; // ⭐️ [삭제] 애니메이션으로 제어
         }
+    });
+
+    // ⭐️ [추가] 해상도 변경 시 다운로드 링크 업데이트 함수
+    resolutionSelect.addEventListener('change', updateDownloadLinks);
+
+    function updateDownloadLinks() {
+        if (!generatedImageUrl) return;
+
+        const selectedSize = resolutionSelect.value;
+        const filename = generatedImageUrl.split('/').pop();
+        const downloadApiUrl = `/api/download/${filename}?size=${selectedSize}`;
+
+        downloadLink.href = downloadApiUrl;
+        downloadLink.setAttribute('download', `${filename.replace('.png', '')}_${selectedSize}.png`);
+    }
+
+    // ⭐️ [추가] 결과 표시 오버레이 닫기 버튼
+    closeResultButton.addEventListener('click', () => {
+        resultDisplay.style.display = 'none'; // 결과 오버레이 숨김
+        generatedImageUrl = null; // URL 초기화
+        // 필요하다면 페이지 상태를 초기화하는 추가 로직
     });
 
     document.querySelector('.mode-btn[data-mode="image"]').click();

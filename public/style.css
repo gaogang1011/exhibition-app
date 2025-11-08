@@ -18,14 +18,14 @@ body {
 .container {
     max-width: 700px;
     width: 100%;
-    text-align: center; /* ⭐️ [핵심] 컨테이너 내 모든 인라인 요소를 중앙 정렬 */
+    text-align: center;
 }
 h1 {
     color: #111;
     margin-bottom: 30px;
     font-weight: 800;
     letter-spacing: 2px;
-    padding-top: 20px; /* 모바일 겹침 방지 */
+    padding-top: 20px;
     margin-top: 10px;
 }
 h1 i {
@@ -67,7 +67,7 @@ h3, h4 {
     display: inline-block;
     background-color: white;
     color: #111;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* 그림자 유지 */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 .full-width {
     width: 90%;
@@ -103,12 +103,12 @@ h3, h4 {
 .input-full {
     width: 90%;
     padding: 12px;
-    margin: 8px auto; /* ⭐️ [수정] 입력 필드 중앙 정렬 */
+    margin: 8px auto;
     border-radius: 4px;
     border: 1px solid #ccc;
     box-sizing: border-box;
     transition: border-color 0.2s;
-    display: block; /* 블록 요소로 변경 */
+    display: block;
 }
 .input-full:focus {
     border-color: #111;
@@ -138,7 +138,7 @@ h3, h4 {
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
 }
 
-/* 갤러리 네비게이션 버튼 (위치 수정 없음) */
+/* 갤러리 네비게이션 버튼 */
 .gallery-nav {
     position: absolute;
     top: 25px;
@@ -151,21 +151,114 @@ h3, h4 {
     }
 }
 
-
-/* GIF 애니메이션 컨테이너 */
-.loading-animation {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    margin-top: 20px;
-}
+/* QR 코드 스타일 */
 .qr-box {
-    margin: 15px auto; /* ⭐️ [수정] QR 코드 중앙 정렬 */
+    margin: 15px auto;
     padding: 8px;
     border: 2px solid #111;
     display: inline-block;
     background-color: white;
 }
+.safety-note {
+    color: #ff3e3e;
+    font-size: 0.8em;
+    margin-top: 5px;
+}
 
-/* ... (나머지 스타일 유지) ... */
+/* =====================================
+   ⭐️ [추가] 전체 화면 로딩 오버레이 스타일
+   ===================================== */
+.full-screen-loading {
+    position: fixed; /* 화면에 고정 */
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.95); /* 거의 검은색 배경 */
+    display: flex; /* 자식 요소 중앙 정렬 */
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999; /* 다른 모든 요소 위에 */
+    opacity: 1; /* 초기 투명도 */
+    transition: opacity 0.5s ease-in-out; /* 페이드 아웃 전환 효과 */
+}
+
+/* 로딩 GIF (전체 화면 버전) */
+.loading-gif-full {
+    width: 200px; /* GIF 크기 조정 */
+    height: 200px;
+    object-fit: contain;
+    margin-bottom: 20px;
+}
+
+/* 로딩 텍스트 (전체 화면 버전) */
+.loading-text-full {
+    color: white; /* 어두운 배경에 맞게 텍스트 색상 변경 */
+    font-size: 1.8em;
+    font-weight: bold;
+    letter-spacing: 2px;
+}
+
+/* 페이드 아웃 애니메이션 */
+.full-screen-loading.fade-out {
+    opacity: 0;
+}
+
+/* =====================================
+   ⭐️ [추가] 결과 이미지 표시 오버레이 스타일
+   ===================================== */
+.result-display-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8); /* 뒷 배경을 살짝 어둡게 */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9998; /* 로딩보다는 낮고 컨텐츠보다는 높게 */
+}
+
+.result-card {
+    background-color: white;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+    text-align: center;
+    max-width: 90%;
+    max-height: 90%;
+    overflow-y: auto; /* 내용이 넘칠 경우 스크롤 */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* 다운로드 링크 및 닫기 버튼 스타일 */
+.download-link, .go-back-btn {
+    margin-top: 20px;
+    width: auto; /* 버튼 폭 자동 */
+    padding: 12px 25px;
+    font-size: 1em;
+}
+.download-link {
+    background-color: #111 !important;
+    color: white !important;
+}
+.go-back-btn {
+    background-color: #ccc !important;
+    color: #111 !important;
+}
+
+/* 해상도 선택 드롭다운 */
+.size-select-wrapper {
+    margin-top: 15px;
+    margin-bottom: 10px;
+}
+#resolutionSelect {
+    padding: 8px 12px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+    font-size: 0.9em;
+}
