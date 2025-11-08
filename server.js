@@ -44,7 +44,7 @@ app.use('/images', express.static(IMAGES_PATH));
 app.use(express.json());
 
 // ===================================================
-// PC-모바일 브리지 API
+// PC-모바일 브리지 API (유지)
 // ===================================================
 
 app.get('/api/start-upload-session', (req, res) => {
@@ -86,7 +86,7 @@ app.get('/api/check-upload-status/:sessionId', (req, res) => {
 });
 
 // ===================================================
-// AI 처리 API (실제 OpenAI 호출 로직 통합)
+// AI 처리 API (OpenAI 호출 및 에러 처리 강화)
 // ===================================================
 app.post('/api/ai-process', upload.single('pcImage'), async (req, res) => {
     const { prompt, style, mode, qrUploadedFileName } = req.body;
@@ -134,20 +134,29 @@ app.post('/api/ai-process', upload.single('pcImage'), async (req, res) => {
 
     } catch (error) {
         console.error('AI 처리 중 오류 발생 (server.js):', error);
-        res.status(500).json({ error: 'AI 이미지 생성에 실패했습니다.', details: error.message });
+
+        let errorMessage = 'AI 이미지 생성에 실패했습니다. (서버 오류)';
+
+        // [수정된 부분] OpenAI 콘텐츠 정책 위반 에러를 감지하고 사용자 친화적인 메시지 반환
+        if (error.code === 'content_policy_violation') {
+            errorMessage = '⚠️ 콘텐츠 정책 위반: 입력하신 내용이 OpenAI의 안전 시스템에 의해 거부되었습니다. 부적절하거나 민감한 내용을 포함하지 않도록 프롬프트를 수정해주세요.';
+        }
+
+        res.status(500).json({
+            error: errorMessage, // 프론트엔드에 반환될 메시지
+            details: error.message
+        });
     }
 });
 
 // ===================================================
-// [추가된 기능] 다운로드 강제 API (QR 코드 다운로드 해결)
+// 다운로드 강제 API (QR 코드 다운로드 해결)
 // ===================================================
 app.get('/api/download/:filename', (req, res) => {
     const filename = req.params.filename;
-    // IMAGES_PATH는 images 폴더 전체를 가리킵니다. (예: images/ai_result_xyz.png)
     const filePath = path.join(IMAGES_PATH, filename);
 
     if (fs.existsSync(filePath)) {
-        // [핵심] Content-Disposition 헤더를 attachment로 설정하여 다운로드를 강제합니다.
         res.setHeader('Content-Disposition', 'attachment; filename="' + filename + '"');
         res.setHeader('Content-Type', 'application/octet-stream');
         res.sendFile(filePath);

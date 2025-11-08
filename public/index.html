@@ -9,7 +9,7 @@
 </head>
 <body>
 <div class="container">
-    <h1>🎨 AI 이미지 스튜디오</h1>
+    <h1>🎨 AI 이미지 변환/생성 스튜디오</h1>
 
     <div class="mode-selector-wrapper card">
         <h2>1단계: 작업 모드 선택</h2>
@@ -34,6 +34,7 @@
         <section id="textMode" class="mode-content" style="display: none;">
             <h3>생성할 이미지 설명</h3>
             <textarea id="textPromptInput" placeholder="고화질, 미래 도시를 걷는 고양이..." rows="3" class="input-full"></textarea>
+            <p class="safety-note">⚠️ **금지 사항:** 폭력적, 혐오적, 성적 콘텐츠 및 타인 권리 침해는 정책 위반으로 거부됩니다.</p>
         </section>
 
         <section id="qrMode" class="mode-content" style="display: none;">
@@ -70,7 +71,6 @@
 </div>
 
 <script>
-    // *** 이 스크립트 블록은 기능 유지를 위해 이전 답변의 최종 JavaScript 로직을 그대로 사용합니다. ***
     let currentMode = 'image';
     let pcUploadedFile = null;
     let qrUploadedFileName = null;
@@ -194,10 +194,18 @@
             return alert(`[${currentMode} 모드]에 필요한 입력이 부족합니다.`);
         }
 
-        document.getElementById('loadingStatus').style.display = 'block';
+        const loadingStatus = document.getElementById('loadingStatus');
+        loadingStatus.style.display = 'block';
 
         try {
             const response = await fetch('/api/ai-process', { method: 'POST', body: formData });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                alert(errorData.error || 'AI 이미지 생성에 실패했습니다. (서버 오류)');
+                return;
+            }
+
             const data = await response.json();
 
             if (data.aiImageUrl) {
@@ -205,7 +213,12 @@
             } else {
                 alert('AI 변환 결과 URL을 받지 못했습니다.');
             }
-        } catch(e) { /* ... */ }
+        } catch(e) {
+            alert('네트워크 또는 예상치 못한 오류가 발생했습니다.');
+            console.error("Fetch/System Error:", e);
+        } finally {
+            loadingStatus.style.display = 'none';
+        }
     });
 
     // 초기 모드 활성화 (PC 이미지 변환)
