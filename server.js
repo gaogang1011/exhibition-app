@@ -103,7 +103,12 @@ app.post('/api/ai-process', upload.single('pcImage'), async (req, res) => {
             return res.status(400).json({ error: '필수 입력 데이터가 부족하거나 모드가 일치하지 않습니다.' });
         }
 
-        let finalPrompt = `${prompt} (${style} 스타일로 변환/생성)`;
+        let finalPrompt = prompt + (style && style !== 'default' ? ` in ${style} style` : '');
+
+        // [수정] 정책 위반 방지 로직: 프롬프트가 너무 짧거나 스타일만 있을 경우 안전한 기본 문구를 추가
+        if (finalPrompt.length < 20 || finalPrompt.toLowerCase().includes('style') && finalPrompt.split(' ').length < 5) {
+            finalPrompt = `A beautiful subject, ${finalPrompt || 'detailed image'}.`;
+        }
 
         const response = await openai.images.generate({
             model: "dall-e-3",
@@ -137,13 +142,13 @@ app.post('/api/ai-process', upload.single('pcImage'), async (req, res) => {
 
         let errorMessage = 'AI 이미지 생성에 실패했습니다. (서버 오류)';
 
-        // [수정된 부분] OpenAI 콘텐츠 정책 위반 에러를 감지하고 사용자 친화적인 메시지 반환
-        if (error.code === 'content_policy_violation') {
-            errorMessage = '⚠️ 콘텐츠 정책 위반: 입력하신 내용이 OpenAI의 안전 시스템에 의해 거부되었습니다. 부적절하거나 민감한 내용을 포함하지 않도록 프롬프트를 수정해주세요.';
+        // 정책 위반 에러 감지 및 사용자 친화적인 메시지 반환
+        if (error.code === 'content_policy_violation' || error.status === 400 && error.error && error.error.code === 'content_policy_violation') {
+            errorMessage = '⚠️ 콘텐츠 정책 위반: 입력하신 내용이 OpenAI의 안전 시스템에 의해 거부되었습니다. 프롬프트 내용을 안전하게 수정해주세요.';
         }
 
         res.status(500).json({
-            error: errorMessage, // 프론트엔드에 반환될 메시지
+            error: errorMessage,
             details: error.message
         });
     }
