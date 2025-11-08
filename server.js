@@ -6,9 +6,8 @@ const path = require('path');
 const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
 
-// [수정] OpenAI 및 node-fetch 모듈 로드
 const { OpenAI } = require('openai');
-const fetch = require('node-fetch'); // **여기가 fetch is not a function 에러를 해결하는 핵심**
+const fetch = require('node-fetch');
 
 // [필수] OpenAI API 키를 환경 변수에서 가져옵니다.
 const openai = new OpenAI({
@@ -45,7 +44,7 @@ app.use('/images', express.static(IMAGES_PATH));
 app.use(express.json());
 
 // ===================================================
-// PC-모바일 브리지 API (코드 유지)
+// PC-모바일 브리지 API
 // ===================================================
 
 app.get('/api/start-upload-session', (req, res) => {
@@ -69,7 +68,6 @@ app.get('/upload.html', (req, res) => {
 app.post('/api/mobile-upload/:sessionId', upload.single('mobileImage'), (req, res) => {
     const sessionId = req.params.sessionId;
     const session = activeSessions[sessionId];
-    // ... (업로드 성공 응답 로직 유지) ...
     if (!session) return res.status(404).send('유효하지 않거나 만료된 세션 ID입니다.');
     if (!req.file) return res.status(400).send('업로드된 파일이 없습니다.');
     activeSessions[sessionId] = { status: 'uploaded', filePath: req.file.path, originalName: req.file.originalname, fileName: path.basename(req.file.path) };
@@ -95,7 +93,6 @@ app.post('/api/ai-process', upload.single('pcImage'), async (req, res) => {
     let inputImagePath = null;
 
     try {
-        // 1. 입력 경로 및 유효성 검사 (유지)
         if (mode === 'image' && req.file) {
             inputImagePath = req.file.path;
         } else if (mode === 'qr' && qrUploadedFileName) {
@@ -106,7 +103,6 @@ app.post('/api/ai-process', upload.single('pcImage'), async (req, res) => {
             return res.status(400).json({ error: '필수 입력 데이터가 부족하거나 모드가 일치하지 않습니다.' });
         }
 
-        // 2. OpenAI DALL-E 호출
         let finalPrompt = `${prompt} (${style} 스타일로 변환/생성)`;
 
         const response = await openai.images.generate({
@@ -119,7 +115,6 @@ app.post('/api/ai-process', upload.single('pcImage'), async (req, res) => {
 
         const imageUrl = response.data[0].url;
 
-        // 3. [핵심 수정] 이미지 URL에서 Buffer로 다운로드
         const imageResponse = await fetch(imageUrl);
 
         if (!imageResponse.ok) {
@@ -128,7 +123,6 @@ app.post('/api/ai-process', upload.single('pcImage'), async (req, res) => {
 
         const aiImageBuffer = Buffer.from(await imageResponse.arrayBuffer());
 
-        // 4. 파일 저장
         const finalFileName = `ai_result_${uuidv4()}.png`;
         const finalSavePath = path.join(IMAGES_PATH, finalFileName);
 
@@ -143,5 +137,24 @@ app.post('/api/ai-process', upload.single('pcImage'), async (req, res) => {
         res.status(500).json({ error: 'AI 이미지 생성에 실패했습니다.', details: error.message });
     }
 });
+
+// ===================================================
+// [추가된 기능] 다운로드 강제 API (QR 코드 다운로드 해결)
+// ===================================================
+app.get('/api/download/:filename', (req, res) => {
+    const filename = req.params.filename;
+    // IMAGES_PATH는 images 폴더 전체를 가리킵니다. (예: images/ai_result_xyz.png)
+    const filePath = path.join(IMAGES_PATH, filename);
+
+    if (fs.existsSync(filePath)) {
+        // [핵심] Content-Disposition 헤더를 attachment로 설정하여 다운로드를 강제합니다.
+        res.setHeader('Content-Disposition', 'attachment; filename="' + filename + '"');
+        res.setHeader('Content-Type', 'application/octet-stream');
+        res.sendFile(filePath);
+    } else {
+        res.status(404).send('다운로드할 파일을 찾을 수 없습니다.');
+    }
+});
+
 
 app.listen(port, () => console.log(`Server running on port ${port}`));

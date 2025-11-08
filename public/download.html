@@ -44,13 +44,20 @@
         if (aiImageUrl) {
             const decodedUrl = decodeURIComponent(aiImageUrl);
 
-            // 1. 다운로드 링크 설정
-            const downloadLink = document.getElementById('downloadLink');
-            downloadLink.href = decodedUrl;
+            // 파일명 추출: /images/ai_result_xyz.png 에서 ai_result_xyz.png 만 추출
+            const filename = decodedUrl.split('/').pop();
 
-            // 2. **[핵심 복구 로직]** URL을 QR 코드로 생성
+            // [수정된 핵심] QR 코드와 PC 버튼에 사용될 다운로드 API 경로를 생성합니다.
+            const downloadApiUrl = `/api/download/${filename}`;
+
+            // 1. 다운로드 링크 설정 (PC용 버튼)
+            const downloadLink = document.getElementById('downloadLink');
+            downloadLink.href = downloadApiUrl;
+
+            // 2. QR 코드 생성 (모바일 스캔 시 다운로드 강제)
             new QRCode(document.getElementById("qrcode"), {
-                text: decodedUrl, // AI 이미지 URL을 QR 코드로 변환
+                // 서버의 절대 경로를 사용하여 QR 코드에 다운로드 API URL을 담습니다.
+                text: `${window.location.origin}${downloadApiUrl}`,
                 width: 200,
                 height: 200,
                 colorDark : "#000000",
