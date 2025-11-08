@@ -3,7 +3,7 @@
 const express = require('express');
 const multer = require('multer');
 const path = require('path');
-const fs = require('fs');
+const fs = require('fs'); // 파일 시스템 동기/비동기 처리를 위해 사용
 const { v4: uuidv4 } = require('uuid');
 
 const { OpenAI } = require('openai');
@@ -42,6 +42,19 @@ app.use(express.static(PUBLIC_PATH));
 app.use('/images', express.static(IMAGES_PATH));
 
 app.use(express.json());
+
+// ===================================================
+// 보조 함수: 이미지를 Base64로 인코딩 (Vision API 사용을 위해 필요)
+// ===================================================
+function imageToBase64(filePath) {
+    try {
+        // 비동기 환경에서 동기 처리 (작은 파일이므로 성능 문제 크지 않음)
+        return fs.readFileSync(filePath).toString('base64');
+    } catch (e) {
+        console.error("파일 읽기 오류:", e);
+        return null;
+    }
+}
 
 // ===================================================
 // PC-모바일 브리지 API (유지)
@@ -86,11 +99,12 @@ app.get('/api/check-upload-status/:sessionId', (req, res) => {
 });
 
 // ===================================================
-// AI 처리 API (프롬프트 보강 로직 추가)
+// AI 처리 API (GPT-4o Vision 및 DALL-E 3 통합)
 // ===================================================
 app.post('/api/ai-process', upload.single('pcImage'), async (req, res) => {
     const { prompt, style, mode, qrUploadedFileName } = req.body;
     let inputImagePath = null;
+    let basePrompt = prompt;
 
     try {
         if (mode === 'image' && req.file) {
@@ -98,20 +112,58 @@ app.post('/api/ai-process', upload.single('pcImage'), async (req, res) => {
         } else if (mode === 'qr' && qrUploadedFileName) {
             inputImagePath = path.join(UPLOADS_PATH, qrUploadedFileName);
         } else if (mode === 'text') {
-            // 파일 입력 필요 없음
+            // 텍스트 모드는 파일 필요 없음
         } else {
             return res.status(400).json({ error: '필수 입력 데이터가 부족하거나 모드가 일치하지 않습니다.' });
         }
 
-        let basePrompt = prompt;
+        // --- [핵심] GPT-4o Vision을 사용한 이미지 분석 (Image-to-Image 모드) ---
+        if ((mode === 'image' || mode === 'qr') && inputImagePath) {
 
-        // [수정] 프롬프트 보강 로직: 짧거나 스타일만 있을 경우 기본 문구 추가
-        if ((mode !== 'text' || basePrompt.length < 5) && !basePrompt.toLowerCase().includes('a photo of') && !basePrompt.toLowerCase().includes('an image of')) {
-            basePrompt = `A high-quality photo of the subject, ${basePrompt || 'detailed image'}.`;
+            const base64Image = imageToBase64(inputImagePath);
+            if (!base64Image) {
+                return res.status(500).json({ error: '이미지 파일을 읽을 수 없습니다.' });
+            }
+
+            // 1. GPT-4o Vision API 호출
+            const visionResponse = await openai.chat.completions.create({
+                model: "gpt-4o", // Vision 분석을 위해 GPT-4o 사용
+                messages: [
+                    {
+                        role: "system",
+                        content: "You are an expert AI image analyzer. Describe the main subject, composition, background, lighting, and primary colors of the uploaded photo in one detailed English text prompt (under 100 words). Do not include any stylistic or artistic instructions (e.g., oil painting, animation style). This description will be the base for an image generation model.",
+                    },
+                    {
+                        role: "user",
+                        content: [
+                            { type: "text", text: "Analyze the uploaded photo and describe it." },
+                            {
+                                type: "image_url",
+                                image_url: {
+                                    url: `data:image/jpeg;base64,${base64Image}`,
+                                },
+                            },
+                        ],
+                    },
+                ],
+                max_tokens: 300,
+            });
+
+            const visionDescription = visionResponse.choices[0].message.content.trim();
+
+            // 2. Vision 분석 결과와 사용자 프롬프트를 결합
+            // 원본의 특징을 살리기 위해 Vision 결과를 프롬프트 맨 앞에 배치
+            basePrompt = `(Original Content Description: ${visionDescription}). User request: ${basePrompt}`;
+
+            // Image-to-Image 시뮬레이션을 위해 프롬프트 길이를 확보합니다.
         }
 
-        let finalPrompt = `${basePrompt} (${style} style)`;
+        // --- DALL-E 3 이미지 생성 (최종 프롬프트 구성) ---
 
+        // 최종 프롬프트 구성
+        let finalPrompt = `${basePrompt}. Convert it into ${style} style. Highly detailed and professional quality.`;
+
+        // 3. DALL-E 3 API 호출
         const response = await openai.images.generate({
             model: "dall-e-3",
             prompt: finalPrompt,
@@ -122,6 +174,7 @@ app.post('/api/ai-process', upload.single('pcImage'), async (req, res) => {
 
         const imageUrl = response.data[0].url;
 
+        // 4. 생성된 이미지 다운로드 및 저장
         const imageResponse = await fetch(imageUrl);
 
         if (!imageResponse.ok) {
@@ -157,7 +210,7 @@ app.post('/api/ai-process', upload.single('pcImage'), async (req, res) => {
 });
 
 // ===================================================
-// 다운로드 강제 API (QR 코드 다운로드 해결)
+// 다운로드 강제 API (유지)
 // ===================================================
 app.get('/api/download/:filename', (req, res) => {
     const filename = req.params.filename;
