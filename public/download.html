@@ -15,6 +15,18 @@
             background-color: white;
             box-shadow: 0 4px 8px rgba(0,0,0,0.1);
         }
+        /* [추가] 다운로드 옵션 선택 영역 스타일 */
+        #downloadOptions {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+        }
+        .option-box {
+            border: 1px solid #ccc;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+        }
     </style>
 </head>
 <body>
@@ -22,14 +34,28 @@
 <div class="container">
     <h2>🎉 AI 변환 완료!</h2>
 
-    <div id="qrcode" class="qr-box"></div>
-    <p class="status-text note">모바일로 위 QR 코드를 스캔하여 이미지를 즉시 다운로드하세요.</p>
+    <img id="finalImagePreview" alt="AI 변환 결과 이미지" class="preview-img" style="display: block;">
 
-    <img id="finalImage" alt="AI 변환 결과 이미지" class="preview-img" style="display: none;">
+    <button id="showDownloadOptionsBtn" class="btn download-link" style="font-size: 1.2em; padding: 15px 30px;">
+        ⬇️ 이미지 다운로드
+    </button>
 
-    <a id="downloadLink" class="btn download-link" **download="my_ai_art.png"** href="#">
-        ⬇️ 이미지 파일 저장 (PC 다운로드용)
-    </a>
+    <div id="downloadOptions" style="display: none;">
+        <h3>다운로드 방법 선택</h3>
+
+        <div class="option-box">
+            <h4>1. 모바일 다운로드 (QR 코드)</h4>
+            <div id="qrcode" class="qr-box"></div>
+            <p class="status-text note">모바일로 스캔하여 즉시 사진첩에 저장하세요.</p>
+        </div>
+
+        <div class="option-box">
+            <h4>2. PC에 바로 저장</h4>
+            <a id="downloadLink" class="btn primary-btn" download="my_ai_art.png" href="#">
+                💻 PC에 파일 저장하기
+            </a>
+        </div>
+    </div>
 
     <a href="index.html" class="btn go-back-btn">
         ↩️ 다시 변환하기
@@ -44,19 +70,24 @@
         if (aiImageUrl) {
             const decodedUrl = decodeURIComponent(aiImageUrl);
 
-            // 파일명 추출: /images/ai_result_xyz.png 에서 ai_result_xyz.png 만 추출
+            // 파일명 추출 및 다운로드 API URL 생성
             const filename = decodedUrl.split('/').pop();
-
-            // [수정된 핵심] QR 코드와 PC 버튼에 사용될 다운로드 API 경로를 생성합니다.
             const downloadApiUrl = `/api/download/${filename}`;
 
-            // 1. 다운로드 링크 설정 (PC용 버튼)
-            const downloadLink = document.getElementById('downloadLink');
-            downloadLink.href = downloadApiUrl;
+            // 1. 미리보기 이미지 설정
+            document.getElementById('finalImagePreview').src = decodedUrl;
 
-            // 2. QR 코드 생성 (모바일 스캔 시 다운로드 강제)
+            // 2. [UX 수정] '다운로드 버튼' 클릭 시 옵션 표시
+            document.getElementById('showDownloadOptionsBtn').addEventListener('click', () => {
+                document.getElementById('downloadOptions').style.display = 'block';
+                document.getElementById('showDownloadOptionsBtn').style.display = 'none'; // 버튼 숨김
+            });
+
+            // 3. PC 다운로드 링크 설정
+            document.getElementById('downloadLink').href = downloadApiUrl;
+
+            // 4. QR 코드 생성
             new QRCode(document.getElementById("qrcode"), {
-                // 서버의 절대 경로를 사용하여 QR 코드에 다운로드 API URL을 담습니다.
                 text: `${window.location.origin}${downloadApiUrl}`,
                 width: 200,
                 height: 200,
@@ -64,10 +95,6 @@
                 colorLight : "#ffffff",
                 correctLevel : QRCode.CorrectLevel.H
             });
-
-            // (선택 사항: 이미지를 페이지에 표시하고 싶다면 아래 주석을 해제)
-            // document.getElementById('finalImage').src = decodedUrl;
-            // document.getElementById('finalImage').style.display = 'block';
 
         } else {
             alert('이미지 정보를 찾을 수 없어 원본 페이지로 돌아갑니다.');
