@@ -9,59 +9,68 @@
 </head>
 <body>
 <div class="container">
-    <h1>🎨 AI 이미지 변환/생성 스튜디오</h1>
+    <h1>🎨 AI 이미지 스튜디오</h1>
 
-    <div class="mode-selector">
-        <button class="btn mode-btn active" data-mode="image">📷 이미지 변환 (PC)</button>
-        <button class="btn mode-btn" data-mode="text">📝 텍스트 생성</button>
-        <button class="btn mode-btn" data-mode="qr">📱 QR 업로드 (Mobile)</button>
+    <div class="mode-selector-wrapper card">
+        <h2>1단계: 작업 모드 선택</h2>
+        <div class="mode-selector">
+            <button class="btn mode-btn active" data-mode="image">📷 PC 파일 변환</button>
+            <button class="btn mode-btn" data-mode="text">📝 텍스트 생성</button>
+            <button class="btn mode-btn" data-mode="qr">📱 모바일 사진 전송</button>
+        </div>
     </div>
 
-    <section id="imageMode" class="section-box mode-content">
-        <h3>📷 내 PC 파일로 변환</h3>
-        <input type="file" accept="image/*" name="pcImage" id="fileUploader" style="display: none;">
-        <button id="uploadButton" class="btn primary-btn">PC 파일 선택</button>
-        <img id="originalImage" alt="업로드된 원본 이미지" class="preview-img" style="display: none;">
-        <p id="fileStatus" class="status-text"></p>
-    </section>
+    <div class="input-area-wrapper card">
+        <h2>2단계: 원본/설정 입력</h2>
 
-    <section id="textMode" class="section-box mode-content" style="display: none;">
-        <h3>📝 텍스트로 이미지 생성</h3>
-        <textarea id="textPromptInput" placeholder="생성하고 싶은 이미지를 상세히 설명하세요..." rows="3" class="input-full"></textarea>
-    </section>
+        <section id="imageMode" class="mode-content">
+            <h3>PC 파일 선택</h3>
+            <input type="file" accept="image/*" name="pcImage" id="fileUploader" style="display: none;">
+            <button id="uploadButton" class="btn primary-btn full-width">PC 파일 선택</button>
+            <img id="originalImage" alt="업로드된 원본 이미지" class="preview-img" style="display: none;">
+            <p id="fileStatus" class="status-text"></p>
+        </section>
 
-    <section id="qrMode" class="section-box mode-content" style="display: none;">
-        <h3>📱 모바일 사진 전송 (QR 브리지)</h3>
+        <section id="textMode" class="mode-content" style="display: none;">
+            <h3>생성할 이미지 설명</h3>
+            <textarea id="textPromptInput" placeholder="고화질, 미래 도시를 걷는 고양이..." rows="3" class="input-full"></textarea>
+        </section>
 
-        <button id="qrUploadStartButton" class="btn primary-btn">QR 코드 생성 시작</button>
+        <section id="qrMode" class="mode-content" style="display: none;">
+            <h3>모바일 사진 전송 (QR 브리지)</h3>
+            <button id="qrUploadStartButton" class="btn primary-btn full-width">QR 코드 생성 시작</button>
 
-        <div id="qrBridgeArea" style="display: none; text-align: center;">
-            <h4>모바일 업로드 대기 중...</h4>
-            <div id="qrcode" class="qr-box"></div>
-            <p id="qrBridgeStatus" class="status-text note">모바일로 위 QR 코드를 스캔하여 사진을 전송하세요.</p>
-            <button id="cancelQrButton" class="btn secondary-btn">취소</button>
+            <div id="qrBridgeArea" class="qr-bridge-area" style="display: none; text-align: center;">
+                <h4>모바일 업로드 대기 중...</h4>
+                <div id="qrcode" class="qr-box"></div>
+                <p id="qrBridgeStatus" class="status-text note">모바일로 스캔 후 사진을 전송하세요.</p>
+                <button id="cancelQrButton" class="btn secondary-btn small-btn">취소</button>
+            </div>
+
+            <img id="qrOriginalImage" alt="QR로 업로드된 이미지" class="preview-img" style="display: none;">
+            <p id="qrFileStatus" class="status-text"></p>
+        </section>
+
+        <div id="commonAISettings" class="common-settings">
+            <h4>AI 스타일 및 추가 설정</h4>
+            <textarea id="stylePromptInput" placeholder="AI 스타일 (예: 수채화, 사이버펑크)..." rows="2" class="input-full"></textarea>
+            <select id="styleSelect" class="input-full">
+                <option value="default">스타일 선택 (선택 사항)</option>
+                <option value="cartoon">카툰 스타일</option>
+                <option value="oilpainting">유화 스타일</option>
+            </select>
         </div>
+    </div>
 
-        <img id="qrOriginalImage" alt="QR로 업로드된 이미지" class="preview-img" style="display: none;">
-        <p id="qrFileStatus" class="status-text"></p>
-    </section>
-
-    <section id="commonAISettings" class="section-box">
-        <h3>공통 AI 설정</h3>
-        <textarea id="stylePromptInput" placeholder="AI 스타일 추가 설명..." rows="2" class="input-full"></textarea>
-        <select id="styleSelect" class="input-full">
-            <option value="default">스타일 선택 (선택 사항)</option>
-            <option value="cartoon">카툰 스타일</option>
-            <option value="oilpainting">유화 스타일</option>
-        </select>
-
-        <button id="aiConvertButton" class="btn secondary-btn">✨ AI로 변환/생성하기</button>
-
-        <p id="loadingStatus" class="status-text" style="display: none;">AI 이미지 생성 중입니다. 잠시만 기다려주세요...</p>
-    </section>
+    <div class="action-area card">
+        <h2>3단계: AI 실행</h2>
+        <button id="aiConvertButton" class="btn action-btn full-width">✨ AI 변환/생성 시작</button>
+        <p id="loadingStatus" class="status-text loading-text" style="display: none;">AI 이미지 생성 중입니다. 잠시만 기다려주세요...</p>
+    </div>
 </div>
 
 <script>
+    // *** 이 스크립트 블록은 기능 유지를 위해 이전 답변의 최종 JavaScript 로직을 그대로 사용합니다. ***
     let currentMode = 'image';
     let pcUploadedFile = null;
     let qrUploadedFileName = null;
@@ -89,7 +98,6 @@
             document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
             button.classList.add('active');
 
-            // 모드 전환 시 이전 QR 폴링 중지
             if (pollingInterval) clearInterval(pollingInterval);
             qrBridgeArea.style.display = 'none';
             qrUploadStartButton.style.display = 'inline-block';
@@ -100,7 +108,7 @@
     uploadButton.addEventListener('click', () => fileUploader.click());
     fileUploader.addEventListener('change', (event) => {
         pcUploadedFile = event.target.files[0];
-        qrUploadedFileName = null; // 다른 업로드 모드 초기화
+        qrUploadedFileName = null;
 
         const reader = new FileReader();
         reader.onload = (e) => {
@@ -124,23 +132,20 @@
 
         if (!currentSessionId) return alert('세션을 시작할 수 없습니다.');
 
-        // UI 업데이트
         qrBridgeArea.style.display = 'block';
         qrUploadStartButton.style.display = 'none';
 
-        // QR 코드 생성 (upload.html 파일과 세션 ID를 포함)
         const mobileUploadUrl = `${baseUrl}/upload.html?id=${currentSessionId}`;
+
         qrcodeDiv.innerHTML = '';
         new QRCode(qrcodeDiv, { text: mobileUploadUrl, width: 150, height: 150 });
         qrBridgeStatus.textContent = "모바일로 QR 코드를 스캔하세요.";
 
-        // 폴링 시작
         pollingInterval = setInterval(checkUploadStatus, 1000);
     }
 
     async function checkUploadStatus() {
         if (!currentSessionId) return;
-
         const response = await fetch(`/api/check-upload-status/${currentSessionId}`);
         const data = await response.json();
 
@@ -151,7 +156,6 @@
             qrUploadedFileName = data.fileInfo.fileName;
             pcUploadedFile = null;
 
-            // QR 업로드된 이미지 표시 (서버에서 파일 경로 직접 로드)
             qrOriginalImage.src = `/images/uploads/${qrUploadedFileName}`;
             qrOriginalImage.style.display = 'block';
             qrFileStatus.textContent = `업로드 완료: ${data.fileInfo.originalName}`;
@@ -171,7 +175,7 @@
 
     // --- AI 변환 버튼 클릭 시 (통합 로직) ---
     document.getElementById('aiConvertButton').addEventListener('click', async () => {
-        let prompt = document.getElementById('textPromptInput').value; // Text Mode 프롬프트
+        let prompt = document.getElementById('textPromptInput').value;
         const style = document.getElementById('styleSelect').value;
         const stylePrompt = document.getElementById('stylePromptInput').value;
 
@@ -180,7 +184,6 @@
         formData.append('style', style);
         formData.append('mode', currentMode);
 
-        // 입력 데이터 검증 및 FormData 설정
         if (currentMode === 'image' && pcUploadedFile) {
             formData.append('pcImage', pcUploadedFile);
         } else if (currentMode === 'qr' && qrUploadedFileName) {
@@ -191,7 +194,8 @@
             return alert(`[${currentMode} 모드]에 필요한 입력이 부족합니다.`);
         }
 
-        // ... (로딩 상태 표시 및 fetch 호출 로직 유지) ...
+        document.getElementById('loadingStatus').style.display = 'block';
+
         try {
             const response = await fetch('/api/ai-process', { method: 'POST', body: formData });
             const data = await response.json();

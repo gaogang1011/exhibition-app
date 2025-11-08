@@ -7,25 +7,32 @@
     <link rel="stylesheet" href="style.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
-        .qr-box {
-            margin: 30px auto;
-            padding: 15px;
-            border: 3px solid #007bff;
-            display: inline-block;
-            background-color: white;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        /* download.html 전용 스타일 */
+        #finalImagePreview {
+            width: 100%;
+            height: auto;
+            max-height: 300px;
+            object-fit: contain;
+            display: block;
+            margin: 20px auto;
         }
-        /* [추가] 다운로드 옵션 선택 영역 스타일 */
         #downloadOptions {
             margin-top: 30px;
-            padding-top: 20px;
-            border-top: 1px solid #eee;
         }
         .option-box {
-            border: 1px solid #ccc;
+            border: 2px solid #1a73e8;
             padding: 20px;
-            margin-bottom: 15px;
-            border-radius: 8px;
+            margin-bottom: 20px;
+            border-radius: 12px;
+            background-color: #f7f9fc; /* 옵션 박스 배경 */
+        }
+        .download-link {
+            background-color: #4285f4; /* 구글 블루 */
+            color: white;
+        }
+        .go-back-btn {
+            background-color: #6c757d;
+            color: white;
         }
     </style>
 </head>
@@ -34,7 +41,7 @@
 <div class="container">
     <h2>🎉 AI 변환 완료!</h2>
 
-    <img id="finalImagePreview" alt="AI 변환 결과 이미지" class="preview-img" style="display: block;">
+    <img id="finalImagePreview" alt="AI 변환 결과 이미지" class="preview-img">
 
     <button id="showDownloadOptionsBtn" class="btn download-link" style="font-size: 1.2em; padding: 15px 30px;">
         ⬇️ 이미지 다운로드
@@ -46,12 +53,13 @@
         <div class="option-box">
             <h4>1. 모바일 다운로드 (QR 코드)</h4>
             <div id="qrcode" class="qr-box"></div>
-            <p class="status-text note">모바일로 스캔하여 즉시 사진첩에 저장하세요.</p>
+            <p class="status-text note">모바일로 스캔하여 사진첩에 저장하세요.</p>
         </div>
 
         <div class="option-box">
             <h4>2. PC에 바로 저장</h4>
-            <a id="downloadLink" class="btn primary-btn" download="my_ai_art.png" href="#">
+            <a id="downloadLink" class="btn primary-btn" download="my_ai_art.png" href="#"
+               style="background-color: #34a853;">
                 💻 PC에 파일 저장하기
             </a>
         </div>
@@ -69,24 +77,18 @@
 
         if (aiImageUrl) {
             const decodedUrl = decodeURIComponent(aiImageUrl);
-
-            // 파일명 추출 및 다운로드 API URL 생성
             const filename = decodedUrl.split('/').pop();
             const downloadApiUrl = `/api/download/${filename}`;
 
-            // 1. 미리보기 이미지 설정
             document.getElementById('finalImagePreview').src = decodedUrl;
 
-            // 2. [UX 수정] '다운로드 버튼' 클릭 시 옵션 표시
             document.getElementById('showDownloadOptionsBtn').addEventListener('click', () => {
                 document.getElementById('downloadOptions').style.display = 'block';
-                document.getElementById('showDownloadOptionsBtn').style.display = 'none'; // 버튼 숨김
+                document.getElementById('showDownloadOptionsBtn').style.display = 'none';
             });
 
-            // 3. PC 다운로드 링크 설정
             document.getElementById('downloadLink').href = downloadApiUrl;
 
-            // 4. QR 코드 생성
             new QRCode(document.getElementById("qrcode"), {
                 text: `${window.location.origin}${downloadApiUrl}`,
                 width: 200,
