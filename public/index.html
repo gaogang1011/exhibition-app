@@ -183,7 +183,6 @@
         const stylePrompt = document.getElementById('stylePromptInput').value;
 
         const formData = new FormData();
-        // 사용자 프롬프트와 스타일 프롬프트를 합칩니다.
         formData.append('prompt', prompt + (stylePrompt ? ', ' + stylePrompt : ''));
         formData.append('style', style);
         formData.append('mode', currentMode);

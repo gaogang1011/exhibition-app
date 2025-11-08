@@ -9,7 +9,7 @@
     <style>
         /* download.html 전용 스타일 */
         .download-link {
-            background-color: #111 !important; /* 블랙 */
+            background-color: #111 !important;
             color: white !important;
         }
         .go-back-btn {
@@ -66,9 +66,11 @@
         if (aiImageUrl) {
             const decodedUrl = decodeURIComponent(aiImageUrl);
             const filename = decodedUrl.split('/').pop();
+            // AI 결과 이미지는 /images/ 폴더 바로 아래에 저장되므로, /api/download/ 경로로 직접 요청합니다.
             const downloadApiUrl = `/api/download/${filename}`;
 
-            document.getElementById('finalImagePreview').src = decodedUrl;
+            document.getElementById('finalImagePreview').src = decodedUrl; // AI 이미지 표시
+            console.log("Displaying AI image from:", decodedUrl);
 
             document.getElementById('showDownloadOptionsBtn').addEventListener('click', () => {
                 document.getElementById('downloadOptions').style.display = 'block';
@@ -81,7 +83,7 @@
                 text: `${window.location.origin}${downloadApiUrl}`,
                 width: 200,
                 height: 200,
-                colorDark : "#111111", // 블랙앤화이트 테마에 맞춤
+                colorDark : "#111111",
                 colorLight : "#ffffff",
                 correctLevel : QRCode.CorrectLevel.H
             });
