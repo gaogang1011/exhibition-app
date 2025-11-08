@@ -111,7 +111,7 @@
     let qrUploadedFileName = null;
     let currentSessionId = null;
     let pollingInterval = null;
-    let generatedImageUrl = null; // ⭐️ [추가] 생성된 이미지 URL 저장
+    let generatedImageUrl = null;
 
     const fileUploader = document.getElementById('fileUploader');
     const uploadButton = document.getElementById('uploadButton');
@@ -125,14 +125,15 @@
     const qrOriginalImage = document.getElementById('qrOriginalImage');
     const qrFileStatus = document.getElementById('qrFileStatus');
 
-    const fullScreenLoading = document.getElementById('fullScreenLoading'); // ⭐️ [추가] 전체 화면 로딩 요소
-    const resultDisplay = document.getElementById('resultDisplay'); // ⭐️ [추가] 결과 표시 오버레이
-    const finalImagePreview = document.getElementById('finalImagePreview'); // ⭐️ [추가] 결과 이미지 태그
-    const resolutionSelect = document.getElementById('resolutionSelect'); // ⭐️ [추가] 해상도 선택
-    const downloadLink = document.getElementById('downloadLink'); // ⭐️ [추가] 다운로드 링크
-    const closeResultButton = document.getElementById('closeResultButton'); // ⭐️ [추가] 닫기 버튼
+    const fullScreenLoading = document.getElementById('fullScreenLoading');
+    const resultDisplay = document.getElementById('resultDisplay');
+    const finalImagePreview = document.getElementById('finalImagePreview');
+    const resolutionSelect = document.getElementById('resolutionSelect');
+    const downloadLink = document.getElementById('downloadLink');
+    const closeResultButton = document.getElementById('closeResultButton');
 
-    // --- 모드 전환 로직 (기존과 동일) ---
+
+    // --- 모드 전환 로직 ---
     document.querySelectorAll('.mode-btn').forEach(button => {
         button.addEventListener('click', () => {
             currentMode = button.dataset.mode;
@@ -147,7 +148,7 @@
         });
     });
 
-    // --- 1. PC 업로드 로직 (기존과 동일) ---
+    // --- 1. PC 업로드 로직 ---
     uploadButton.addEventListener('click', () => fileUploader.click());
     fileUploader.addEventListener('change', (event) => {
         pcUploadedFile = event.target.files[0];
@@ -163,7 +164,7 @@
         reader.readAsDataURL(pcUploadedFile);
     });
 
-    // --- 3. QR 업로드 로직 (기존과 동일) ---
+    // --- 3. QR 업로드 로직 ---
     qrUploadStartButton.addEventListener('click', startQrUploadSession);
     cancelQrButton.addEventListener('click', cancelQrUploadSession);
 
@@ -237,7 +238,7 @@
             return alert(`[${currentMode} Mode] Missing input.`);
         }
 
-        fullScreenLoading.style.display = 'flex'; // ⭐️ [수정] 전체 화면 로딩 표시
+        fullScreenLoading.style.display = 'flex'; // 전체 화면 로딩 표시
 
         try {
             const response = await fetch('/api/ai-process', { method: 'POST', body: formData });
@@ -251,29 +252,34 @@
             const data = await response.json();
 
             if (data.aiImageUrl) {
-                generatedImageUrl = data.aiImageUrl; // ⭐️ [추가] 생성된 이미지 URL 저장
-                finalImagePreview.src = generatedImageUrl; // ⭐️ [추가] 결과 이미지 미리보기에 설정
-                updateDownloadLinks(); // ⭐️ [추가] 다운로드 링크 업데이트 (기본 해상도로)
+                generatedImageUrl = data.aiImageUrl;
+                finalImagePreview.src = generatedImageUrl;
 
-                fullScreenLoading.classList.add('fade-out'); // ⭐️ [추가] 페이드 아웃 애니메이션 시작
-                fullScreenLoading.addEventListener('animationend', () => {
+                resolutionSelect.value = 'large';
+                updateDownloadLinks();
+
+                // PPT 전환 효과 시작
+                fullScreenLoading.classList.add('fade-out');
+                fullScreenLoading.addEventListener('animationend', function handler() {
                     fullScreenLoading.style.display = 'none';
                     fullScreenLoading.classList.remove('fade-out');
-                    resultDisplay.style.display = 'flex'; // ⭐️ [추가] 결과 표시 오버레이를 보여줌
+                    resultDisplay.style.display = 'flex'; // 결과 표시 오버레이를 표시
+                    fullScreenLoading.removeEventListener('animationend', handler);
                 }, { once: true });
 
             } else {
                 alert('Result URL not received.');
             }
         } catch(e) {
-            alert('Network error.');
+            alert('Network error or processing error.');
             console.error("Fetch/System Error:", e);
-        } finally {
-            // fullScreenLoading.style.display = 'none'; // ⭐️ [삭제] 애니메이션으로 제어
+            // 에러 발생 시 로딩 화면 닫기
+            fullScreenLoading.style.display = 'none';
+            fullScreenLoading.classList.remove('fade-out');
         }
     });
 
-    // ⭐️ [추가] 해상도 변경 시 다운로드 링크 업데이트 함수
+    // --- 다운로드 링크 업데이트 기능 ---
     resolutionSelect.addEventListener('change', updateDownloadLinks);
 
     function updateDownloadLinks() {
@@ -284,14 +290,21 @@
         const downloadApiUrl = `/api/download/${filename}?size=${selectedSize}`;
 
         downloadLink.href = downloadApiUrl;
-        downloadLink.setAttribute('download', `${filename.replace('.png', '')}_${selectedSize}.png`);
+        downloadLink.setAttribute('download', `ai_result_${selectedSize}.png`);
     }
 
-    // ⭐️ [추가] 결과 표시 오버레이 닫기 버튼
+    // --- 결과 표시 오버레이 닫기 버튼 ---
     closeResultButton.addEventListener('click', () => {
-        resultDisplay.style.display = 'none'; // 결과 오버레이 숨김
-        generatedImageUrl = null; // URL 초기화
-        // 필요하다면 페이지 상태를 초기화하는 추가 로직
+        resultDisplay.style.display = 'none';
+        generatedImageUrl = null;
+        // 입력 필드 초기화
+        document.getElementById('textPromptInput').value = '';
+        document.getElementById('stylePromptInput').value = '';
+        document.getElementById('originalImage').style.display = 'none';
+        document.getElementById('qrOriginalImage').style.display = 'none';
+        document.getElementById('fileStatus').textContent = '';
+        document.getElementById('qrFileStatus').textContent = '';
+        fileUploader.value = '';
     });
 
     document.querySelector('.mode-btn[data-mode="image"]').click();

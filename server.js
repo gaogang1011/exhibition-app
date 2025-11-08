@@ -5,11 +5,12 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
-const sharp = require('sharp'); // ⭐️ [추가] 이미지 리사이징 라이브러리
+const sharp = require('sharp'); // 이미지 리사이징 라이브러리
 
 const { OpenAI } = require('openai');
 const fetch = require('node-fetch');
 
+// [필수] OpenAI API 키를 환경 변수에서 가져옵니다.
 const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
 });
@@ -43,8 +44,8 @@ const activeSessions = {};
 // [정적 파일 서빙]
 app.use('/images', express.static(IMAGES_ROOT_PATH));
 app.use(express.static(PUBLIC_PATH));
-app.use(express.json());
 
+app.use(express.json());
 
 // ===================================================
 // 보조 함수: 이미지를 Base64로 인코딩 (Vision API 사용을 위해 필요)
@@ -78,18 +79,20 @@ function imageToBase64(filePath) {
 }
 
 // ===================================================
-// PC-모바일 브리지 API (유지)
+// PC-모바일 브리지 API
 // ===================================================
 
-app.get('/api/start-upload-session', (req, res) => { /* ... 유지 ... */
+app.get('/api/start-upload-session', (req, res) => {
     const sessionId = uuidv4();
     activeSessions[sessionId] = { status: 'waiting' };
     res.json({ sessionId: sessionId, origin: req.protocol + '://' + req.get('host') });
 });
 
-app.get('/upload.html', (req, res) => { /* ... 유지 ... */
+app.get('/upload.html', (req, res) => {
     const sessionId = req.query.id;
-    if (!sessionId || !activeSessions[sessionId]) return res.status(404).send('유효하지 않거나 만료된 업로드 세션입니다.');
+    if (!sessionId || !activeSessions[sessionId]) {
+        return res.status(404).send('유효하지 않거나 만료된 업로드 세션입니다.');
+    }
     const uploadFilePath = path.join(__dirname, 'public', 'upload.html');
     fs.readFile(uploadFilePath, 'utf8', (err, data) => {
         if (err) return res.status(500).send('서버 오류: 폼을 로드할 수 없습니다.');
@@ -97,7 +100,7 @@ app.get('/upload.html', (req, res) => { /* ... 유지 ... */
     });
 });
 
-app.post('/api/mobile-upload/:sessionId', upload.single('mobileImage'), (req, res) => { /* ... 유지 ... */
+app.post('/api/mobile-upload/:sessionId', upload.single('mobileImage'), (req, res) => {
     const sessionId = req.params.sessionId;
     const session = activeSessions[sessionId];
     if (!session) return res.status(404).send('유효하지 않거나 만료된 세션 ID입니다.');
@@ -112,7 +115,7 @@ app.post('/api/mobile-upload/:sessionId', upload.single('mobileImage'), (req, re
     res.send(`<script>alert('파일 업로드 성공! PC 화면을 확인해주세요.'); setTimeout(function() { window.close(); }, 1000); </script><h1>업로드 성공</h1>`);
 });
 
-app.get('/api/check-upload-status/:sessionId', (req, res) => { /* ... 유지 ... */
+app.get('/api/check-upload-status/:sessionId', (req, res) => {
     const sessionId = req.params.sessionId;
     const session = activeSessions[sessionId];
     if (!session) return res.status(404).json({ status: 'error', message: '세션 만료' });
@@ -142,6 +145,8 @@ app.post('/api/ai-process', upload.single('pcImage'), async (req, res) => {
         } else {
             return res.status(400).json({ error: '필수 입력 데이터가 부족하거나 모드가 일치하지 않습니다.' });
         }
+
+        let visionDescription = "";
 
         // --- GPT-4o Vision을 사용한 이미지 분석 ---
         if ((mode === 'image' || mode === 'qr') && inputImagePath) {
@@ -173,7 +178,7 @@ app.post('/api/ai-process', upload.single('pcImage'), async (req, res) => {
                 max_tokens: 300,
             });
 
-            const visionDescription = visionResponse.choices[0].message.content.trim();
+            visionDescription = visionResponse.choices[0].message.content.trim();
 
             // 2. Vision 분석 결과와 사용자 프롬프트를 결합
             basePrompt = `TRANSFORM this image structure: (${visionDescription}). User's style request: ${basePrompt}`;
@@ -185,6 +190,7 @@ app.post('/api/ai-process', upload.single('pcImage'), async (req, res) => {
         let finalPrompt = basePrompt;
 
         if (mode === 'image' || mode === 'qr') {
+            // [최종 최적화] DALL-E에게 '변환'을 강제하는 강력한 프롬프트 구조 사용
             finalPrompt =
                 `Based on the content described: "${visionDescription}". ` +
                 `The user wants to transform this exact composition into the requested style. ` +
@@ -219,9 +225,6 @@ app.post('/api/ai-process', upload.single('pcImage'), async (req, res) => {
 
         fs.writeFileSync(finalSavePath, aiImageBuffer);
 
-        // [추가] 갤러리 기능: 저장 시 메타데이터 기록 (현재는 파일 시스템에 의존)
-        // 실제로는 DB에 기록해야 하지만, 간단하게 구현하기 위해 파일명을 바로 사용합니다.
-
         const aiImageUrl = `/images/${finalFileName}`;
 
         res.json({ aiImageUrl: aiImageUrl });
@@ -248,7 +251,6 @@ app.post('/api/ai-process', upload.single('pcImage'), async (req, res) => {
 // [추가된 기능] 갤러리 목록 API
 // ===================================================
 app.get('/api/gallery-list', (req, res) => {
-    // IMAGES_ROOT_PATH에서 'ai_result_'로 시작하는 파일만 필터링합니다.
     try {
         const files = fs.readdirSync(IMAGES_ROOT_PATH);
         const galleryItems = files
@@ -286,20 +288,18 @@ app.get('/api/download/:filename', async (req, res) => {
 
         if (size === 'small') resizeWidth = 512;
         else if (size === 'medium') resizeWidth = 1024;
-        // 'large' 또는 size가 없으면 원본 해상도(1024x1024)를 사용합니다.
 
         if (resizeWidth && resizeWidth !== 1024) {
-            // sharp 라이브러리를 사용하여 이미지 리사이징
             const resizedBuffer = await sharp(filePath)
                 .resize(resizeWidth, resizeWidth, { fit: 'inside', withoutEnlargement: true })
-                .png() // PNG로 출력
+                .png()
                 .toBuffer();
 
-            res.setHeader('Content-Disposition', `attachment; filename="${filename.replace('.png', `_${size}.png`)}"`);
+            res.setHeader('Content-Disposition', `attachment; filename="${filename.replace('.png', '')}_${size}.png"`);
             res.setHeader('Content-Type', 'image/png');
             res.send(resizedBuffer);
         } else {
-            // 원본 파일 전송
+            // 원본 파일 전송 (large 또는 size 미지정)
             res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
             res.setHeader('Content-Type', 'application/octet-stream');
             res.sendFile(filePath);
