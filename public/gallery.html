@@ -85,15 +85,11 @@
                         img.src = item.url;
                         img.alt = item.filename;
 
+                        // 갤러리 이미지 클릭 시 새 탭에서 이미지 다운로드 링크를 띄웁니다.
                         img.onclick = () => {
-                            // 갤러리에서 이미지를 클릭하면 download.html 대신 index.html로 이동하여 오버레이에 표시하도록 수정
-                            // 하지만 갤러리 기능은 단순 목록 보여주기이므로, 별도의 페이지가 있는 것이 좋음.
-                            // 현재는 다운로드 기능이 index.html에 통합되었으므로 index.html로 이동시키지 않습니다.
-
-                            // 임시: 갤러리는 이미지 클릭 시 바로 다운로드 창을 띄우거나 index.html로 돌아가야 합니다.
-                            // 현재 코드에서는 index.html로 돌아갈 수 없으므로, 다운로드 링크를 직접 생성합니다.
-                            alert("이 이미지를 다운로드하려면 URL을 복사하여 index.html로 돌아가거나, 개발자 도구를 사용하세요.");
-                            window.open(item.url, '_blank'); // 새 탭에서 이미지 열기
+                            // download.html의 다운로드 API를 사용
+                            const downloadApiUrl = `/api/download/${item.filename}?size=large`;
+                            window.open(downloadApiUrl, '_blank');
                         };
 
                         itemDiv.appendChild(img);

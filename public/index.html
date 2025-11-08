@@ -81,37 +81,12 @@
     <p class="loading-text-full">PROCESSING...</p>
 </div>
 
-<div id="resultDisplay" class="result-display-overlay" style="display: none;">
-    <div class="result-card">
-        <h2>✨ GENERATION COMPLETE</h2>
-        <img id="finalImagePreview" alt="AI 결과 이미지" class="preview-img">
-
-        <div class="size-select-wrapper">
-            <label for="resolutionSelect">Download Size:</label>
-            <select id="resolutionSelect">
-                <option value="large">Large (Original 1024px)</option>
-                <option value="medium">Medium (1024px, Optimized)</option>
-                <option value="small">Small (512px)</option>
-            </select>
-        </div>
-
-        <a id="downloadLink" class="btn download-link" download="my_ai_art.png" href="#">
-            <i class="fas fa-download"></i> SAVE TO PC
-        </a>
-        <button id="closeResultButton" class="btn go-back-btn">
-            ↩️ START NEW GENERATION
-        </button>
-    </div>
-</div>
-
-
 <script>
     let currentMode = 'image';
     let pcUploadedFile = null;
     let qrUploadedFileName = null;
     let currentSessionId = null;
     let pollingInterval = null;
-    let generatedImageUrl = null;
 
     const fileUploader = document.getElementById('fileUploader');
     const uploadButton = document.getElementById('uploadButton');
@@ -126,14 +101,9 @@
     const qrFileStatus = document.getElementById('qrFileStatus');
 
     const fullScreenLoading = document.getElementById('fullScreenLoading');
-    const resultDisplay = document.getElementById('resultDisplay');
-    const finalImagePreview = document.getElementById('finalImagePreview');
-    const resolutionSelect = document.getElementById('resolutionSelect');
-    const downloadLink = document.getElementById('downloadLink');
-    const closeResultButton = document.getElementById('closeResultButton');
 
+    // --- 모드 전환, 업로드, QR 로직 (유지) ---
 
-    // --- 모드 전환 로직 ---
     document.querySelectorAll('.mode-btn').forEach(button => {
         button.addEventListener('click', () => {
             currentMode = button.dataset.mode;
@@ -148,7 +118,6 @@
         });
     });
 
-    // --- 1. PC 업로드 로직 ---
     uploadButton.addEventListener('click', () => fileUploader.click());
     fileUploader.addEventListener('change', (event) => {
         pcUploadedFile = event.target.files[0];
@@ -164,7 +133,6 @@
         reader.readAsDataURL(pcUploadedFile);
     });
 
-    // --- 3. QR 업로드 로직 ---
     qrUploadStartButton.addEventListener('click', startQrUploadSession);
     cancelQrButton.addEventListener('click', cancelQrUploadSession);
 
@@ -217,7 +185,7 @@
         qrUploadStartButton.style.display = 'inline-block';
     }
 
-    // --- AI 변환 버튼 클릭 시 (통합 로직) ---
+    // --- AI 변환 버튼 클릭 시 (핵심 로직: 리디렉션) ---
     document.getElementById('aiConvertButton').addEventListener('click', async () => {
         let prompt = document.getElementById('textPromptInput').value;
         const style = document.getElementById('styleSelect').value;
@@ -238,7 +206,7 @@
             return alert(`[${currentMode} Mode] Missing input.`);
         }
 
-        fullScreenLoading.style.display = 'flex'; // 전체 화면 로딩 표시
+        fullScreenLoading.style.display = 'flex'; // ⭐️ [복구] 전체 화면 로딩 표시
 
         try {
             const response = await fetch('/api/ai-process', { method: 'POST', body: formData });
@@ -246,65 +214,24 @@
             if (!response.ok) {
                 const errorData = await response.json();
                 alert(errorData.error || 'Generation failed (Server Error)');
+                fullScreenLoading.style.display = 'none'; // 에러 시 로딩 닫기
                 return;
             }
 
             const data = await response.json();
 
-            if (data.aiImageUrl) {
-                generatedImageUrl = data.aiImageUrl;
-                finalImagePreview.src = generatedImageUrl;
-
-                resolutionSelect.value = 'large';
-                updateDownloadLinks();
-
-                // PPT 전환 효과 시작
-                fullScreenLoading.classList.add('fade-out');
-                fullScreenLoading.addEventListener('animationend', function handler() {
-                    fullScreenLoading.style.display = 'none';
-                    fullScreenLoading.classList.remove('fade-out');
-                    resultDisplay.style.display = 'flex'; // 결과 표시 오버레이를 표시
-                    fullScreenLoading.removeEventListener('animationend', handler);
-                }, { once: true });
-
+            if (data.filename) {
+                // ⭐️ [복구] 파일 이름을 쿼리 파라미터로 포함하여 download.html로 리디렉션
+                window.location.href = `download.html?file=${data.filename}`;
             } else {
                 alert('Result URL not received.');
+                fullScreenLoading.style.display = 'none';
             }
         } catch(e) {
             alert('Network error or processing error.');
             console.error("Fetch/System Error:", e);
-            // 에러 발생 시 로딩 화면 닫기
             fullScreenLoading.style.display = 'none';
-            fullScreenLoading.classList.remove('fade-out');
         }
-    });
-
-    // --- 다운로드 링크 업데이트 기능 ---
-    resolutionSelect.addEventListener('change', updateDownloadLinks);
-
-    function updateDownloadLinks() {
-        if (!generatedImageUrl) return;
-
-        const selectedSize = resolutionSelect.value;
-        const filename = generatedImageUrl.split('/').pop();
-        const downloadApiUrl = `/api/download/${filename}?size=${selectedSize}`;
-
-        downloadLink.href = downloadApiUrl;
-        downloadLink.setAttribute('download', `ai_result_${selectedSize}.png`);
-    }
-
-    // --- 결과 표시 오버레이 닫기 버튼 ---
-    closeResultButton.addEventListener('click', () => {
-        resultDisplay.style.display = 'none';
-        generatedImageUrl = null;
-        // 입력 필드 초기화
-        document.getElementById('textPromptInput').value = '';
-        document.getElementById('stylePromptInput').value = '';
-        document.getElementById('originalImage').style.display = 'none';
-        document.getElementById('qrOriginalImage').style.display = 'none';
-        document.getElementById('fileStatus').textContent = '';
-        document.getElementById('qrFileStatus').textContent = '';
-        fileUploader.value = '';
     });
 
     document.querySelector('.mode-btn[data-mode="image"]').click();

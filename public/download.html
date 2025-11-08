@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Download AI Image</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+    <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+
+    <style>
+        .result-container {
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+        }
+        .result-card {
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            border: 1px solid #eee;
+            margin-top: 50px;
+        }
+        .download-link {
+            background-color: #111 !important;
+            color: white !important;
+            margin-top: 20px;
+            width: 80%;
+            padding: 12px 25px;
+            font-size: 1.1em;
+        }
+        .go-back-btn {
+            background-color: #ccc !important;
+            color: #111 !important;
+            margin-top: 10px;
+            width: 80%;
+            padding: 12px 25px;
+            font-size: 1.1em;
+        }
+        .preview-img {
+            max-width: 100%;
+            max-height: 400px;
+            margin: 20px auto;
+            border: 2px solid #ddd;
+            display: block;
+        }
+        .size-select-wrapper {
+            margin-top: 15px;
+            margin-bottom: 10px;
+        }
+        #resolutionSelect {
+            padding: 8px 12px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+<div class="container result-container">
+    <div class="result-card">
+        <h2>✨ GENERATION COMPLETE</h2>
+        <img id="finalImagePreview" alt="AI 결과 이미지" class="preview-img" style="display: none;">
+        <p id="errorStatus" style="color: red; display: none;">이미지를 로드할 수 없습니다.</p>
+
+        <div class="size-select-wrapper">
+            <label for="resolutionSelect">Download Size:</label>
+            <select id="resolutionSelect">
+                <option value="large">Large (Original 1024px)</option>
+                <option value="medium">Medium (1024px, Optimized)</option>
+                <option value="small">Small (512px)</option>
+            </select>
+        </div>
+
+        <a id="downloadLink" class="btn download-link" download="my_ai_art.png" href="#">
+            <i class="fas fa-download"></i> SAVE TO PC
+        </a>
+        <a href="index.html" class="btn go-back-btn">
+            ↩️ START NEW GENERATION
+        </a>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const finalImagePreview = document.getElementById('finalImagePreview');
+        const resolutionSelect = document.getElementById('resolutionSelect');
+        const downloadLink = document.getElementById('downloadLink');
+        const errorStatus = document.getElementById('errorStatus');
+
+        // URL에서 쿼리 파라미터 (file) 추출
+        const urlParams = new URLSearchParams(window.location.search);
+        const filename = urlParams.get('file');
+
+        let generatedImageUrl = null;
+
+        if (filename) {
+            generatedImageUrl = `/images/${filename}`;
+            finalImagePreview.src = generatedImageUrl;
+            finalImagePreview.style.display = 'block';
+
+            // 초기 다운로드 링크 설정
+            updateDownloadLinks(filename);
+
+            // 해상도 변경 시 다운로드 링크 업데이트 이벤트 리스너 추가
+            resolutionSelect.addEventListener('change', () => updateDownloadLinks(filename));
+        } else {
+            errorStatus.style.display = 'block';
+        }
+
+        function updateDownloadLinks(filename) {
+            const selectedSize = resolutionSelect.value;
+            // 다운로드 API URL 구성
+            const downloadApiUrl = `/api/download/${filename}?size=${selectedSize}`;
+
+            downloadLink.href = downloadApiUrl;
+            downloadLink.setAttribute('download', `ai_result_${selectedSize}.png`);
+        }
+    });
+</script>
+</body>
+</html>

@@ -48,7 +48,7 @@ app.use(express.static(PUBLIC_PATH));
 app.use(express.json());
 
 // ===================================================
-// 보조 함수: 이미지를 Base64로 인코딩 (Vision API 사용을 위해 필요)
+// 보조 함수: 이미지를 Base64로 인코딩
 // ===================================================
 function imageToBase64(filePath) {
     if (!fs.existsSync(filePath)) {
@@ -227,7 +227,8 @@ app.post('/api/ai-process', upload.single('pcImage'), async (req, res) => {
 
         const aiImageUrl = `/images/${finalFileName}`;
 
-        res.json({ aiImageUrl: aiImageUrl });
+        // ⭐️ [복구] index.html에서 download.html로 리디렉션할 때 사용할 파일 이름만 반환합니다.
+        res.json({ aiImageUrl: aiImageUrl, filename: finalFileName });
 
     } catch (error) {
         console.error('AI 처리 중 오류 발생 (server.js):', error);
@@ -248,7 +249,7 @@ app.post('/api/ai-process', upload.single('pcImage'), async (req, res) => {
 });
 
 // ===================================================
-// [추가된 기능] 갤러리 목록 API
+// 갤러리 목록 API
 // ===================================================
 app.get('/api/gallery-list', (req, res) => {
     try {
@@ -260,7 +261,7 @@ app.get('/api/gallery-list', (req, res) => {
                 filename: file,
                 timestamp: fs.statSync(path.join(IMAGES_ROOT_PATH, file)).mtimeMs
             }))
-            .sort((a, b) => b.timestamp - a.timestamp); // 최신 파일이 먼저 오도록 정렬
+            .sort((a, b) => b.timestamp - a.timestamp);
 
         res.json({ images: galleryItems });
 
@@ -271,11 +272,11 @@ app.get('/api/gallery-list', (req, res) => {
 });
 
 // ===================================================
-// [수정된 기능] 다운로드 강제 및 해상도 선택 API
+// 다운로드 강제 및 해상도 선택 API
 // ===================================================
 app.get('/api/download/:filename', async (req, res) => {
     const filename = req.params.filename;
-    const size = req.query.size; // 'small', 'medium', 'large'
+    const size = req.query.size;
     const filePath = path.join(IMAGES_ROOT_PATH, filename);
 
     if (!fs.existsSync(filePath)) {
