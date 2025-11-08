@@ -180,12 +180,12 @@ h3, h4 {
 
 /* GIF 이미지 크기 조정 */
 .loading-gif-full {
-    width: 90%; /* 화면 너비에 거의 가깝게 확장 */
-    max-width: 400px; /* 너무 커지는 것 방지 */
+    width: 80%; /* ⭐️ 화면 너비의 80%까지 확장 */
+    max-width: 600px; /* PC에서도 600px 이상은 커지지 않도록 제한 */
     height: auto;
     object-fit: contain;
     margin-bottom: 20px;
-    filter: invert(1); /* 흑백 GIF가 검은색 배경에서 잘 보이도록 필터 적용 */
+    filter: invert(1);
 }
 
 .loading-text-full {
