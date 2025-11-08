@@ -3,70 +3,58 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>다운로드 완료</title>
+    <title>DOWNLOAD</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         /* download.html 전용 스타일 */
-        #finalImagePreview {
-            width: 100%;
-            height: auto;
-            max-height: 300px;
-            object-fit: contain;
-            display: block;
-            margin: 20px auto;
-        }
-        #downloadOptions {
-            margin-top: 30px;
-        }
-        .option-box {
-            border: 2px solid #1a73e8;
-            padding: 20px;
-            margin-bottom: 20px;
-            border-radius: 12px;
-            background-color: #f7f9fc; /* 옵션 박스 배경 */
-        }
         .download-link {
-            background-color: #4285f4; /* 구글 블루 */
-            color: white;
+            background-color: #111 !important; /* 블랙 */
+            color: white !important;
         }
         .go-back-btn {
-            background-color: #6c757d;
-            color: white;
+            background-color: #ccc !important;
+            color: #111 !important;
+        }
+        .option-box {
+            border: 1px solid #ccc;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            background-color: #fafafa;
         }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>🎉 AI 변환 완료!</h2>
+    <h2>✨ GENERATION COMPLETE</h2>
 
-    <img id="finalImagePreview" alt="AI 변환 결과 이미지" class="preview-img">
+    <img id="finalImagePreview" alt="AI 결과 이미지" class="preview-img">
 
-    <button id="showDownloadOptionsBtn" class="btn download-link" style="font-size: 1.2em; padding: 15px 30px;">
-        ⬇️ 이미지 다운로드
+    <button id="showDownloadOptionsBtn" class="btn action-btn" style="font-size: 1.1em; padding: 15px 30px;">
+        DOWNLOAD OPTIONS
     </button>
 
     <div id="downloadOptions" style="display: none;">
-        <h3>다운로드 방법 선택</h3>
+        <h3>SELECT DOWNLOAD METHOD</h3>
 
         <div class="option-box">
-            <h4>1. 모바일 다운로드 (QR 코드)</h4>
+            <h4>01. MOBILE (QR CODE)</h4>
             <div id="qrcode" class="qr-box"></div>
-            <p class="status-text note">모바일로 스캔하여 사진첩에 저장하세요.</p>
+            <p class="status-text note">Scan to save to your phone.</p>
         </div>
 
         <div class="option-box">
-            <h4>2. PC에 바로 저장</h4>
-            <a id="downloadLink" class="btn primary-btn" download="my_ai_art.png" href="#"
-               style="background-color: #34a853;">
-                💻 PC에 파일 저장하기
+            <h4>02. DESKTOP (DIRECT SAVE)</h4>
+            <a id="downloadLink" class="btn download-link" download="my_ai_art.png" href="#" style="background-color: #111; color: white;">
+                <i class="fas fa-download"></i> SAVE TO PC
             </a>
         </div>
     </div>
 
     <a href="index.html" class="btn go-back-btn">
-        ↩️ 다시 변환하기
+        ↩️ START NEW GENERATION
     </a>
 </div>
 
@@ -93,13 +81,13 @@
                 text: `${window.location.origin}${downloadApiUrl}`,
                 width: 200,
                 height: 200,
-                colorDark : "#000000",
+                colorDark : "#111111", // 블랙앤화이트 테마에 맞춤
                 colorLight : "#ffffff",
                 correctLevel : QRCode.CorrectLevel.H
             });
 
         } else {
-            alert('이미지 정보를 찾을 수 없어 원본 페이지로 돌아갑니다.');
+            alert('Result not found. Returning to main page.');
             window.location.href = 'index.html';
         }
     });

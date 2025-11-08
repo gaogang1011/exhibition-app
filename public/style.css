@@ -1,11 +1,11 @@
-/* public/style.css */
+/* public/style.css - Black & White Theme */
 
 /* 기본 설정 */
 body {
-    font-family: 'Noto Sans KR', sans-serif;
+    font-family: 'Helvetica Neue', Arial, sans-serif;
     margin: 0;
-    background-color: #eef2f7;
-    color: #333;
+    background-color: #f7f7f7; /* 밝은 배경 */
+    color: #111;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -18,61 +18,76 @@ body {
     text-align: center;
 }
 h1 {
-    color: #1a73e8;
+    color: #111;
     margin-bottom: 30px;
-    font-weight: 700;
+    font-weight: 800;
+    letter-spacing: 2px;
 }
-h2 { color: #555; font-size: 1.4em; margin-bottom: 15px; border-bottom: 2px solid #ddd; padding-bottom: 5px; }
-h3 { color: #333; font-size: 1.2em; margin-top: 0; }
-h4 { color: #1a73e8; margin-top: 15px; }
+h2 {
+    color: #555;
+    font-size: 1.2em;
+    margin-bottom: 15px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+h3, h4 {
+    color: #333;
+    font-weight: 600;
+}
 
 /* 카드 디자인 */
 .card {
     background-color: white;
     padding: 25px;
-    margin-bottom: 25px;
-    border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+    border-radius: 6px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+    border: 1px solid #eee;
 }
 
 /* 버튼 공통 스타일 */
 .btn {
-    padding: 12px 25px;
+    padding: 12px 20px;
     margin: 8px 5px;
     cursor: pointer;
-    border: none;
-    border-radius: 8px;
+    border: 1px solid #111; /* 테두리 추가 */
+    border-radius: 4px;
     font-weight: bold;
     transition: all 0.2s ease-in-out;
     text-decoration: none;
     display: inline-block;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    background-color: white;
+    color: #111;
 }
 .full-width {
     width: 90%;
     margin: 10px 0;
-    font-size: 1.1em;
+    font-size: 1em;
 }
 
-/* 모드 선택 버튼 스타일 */
+/* 모드 선택 버튼 스타일 (아이콘 중심) */
 .mode-selector {
     display: flex;
     justify-content: space-around;
-    gap: 10px;
+    gap: 5px;
     margin-top: 15px;
 }
 .mode-selector .mode-btn {
     flex-grow: 1;
-    background-color: #f0f0f0;
-    color: #555;
+    padding: 15px 5px;
+    font-size: 1.1em;
     border: 1px solid #ddd;
+    color: #555;
 }
 .mode-selector .mode-btn.active {
-    background-color: #1a73e8;
+    background-color: #111; /* 활성화 시 블랙 */
     color: white;
-    border-color: #1a73e8;
+    border-color: #111;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
     transform: translateY(-2px);
-    box-shadow: 0 4px 6px rgba(26, 115, 232, 0.3);
+}
+.mode-selector .mode-btn:not(.active):hover {
+    background-color: #fafafa;
 }
 
 /* 입력 필드 스타일 */
@@ -80,73 +95,64 @@ h4 { color: #1a73e8; margin-top: 15px; }
     width: 90%;
     padding: 12px;
     margin: 8px 0;
-    border-radius: 8px;
+    border-radius: 4px;
     border: 1px solid #ccc;
     box-sizing: border-box;
     transition: border-color 0.2s;
 }
-.input-full:focus {
-    border-color: #1a73e8;
-    outline: none;
-}
 
-/* [수정 부분] 이미지 중앙 정렬 및 비율 통일 */
+/* 이미지 미리보기 스타일 */
 .preview-img {
     max-width: 100%;
     height: auto;
-    max-height: 300px;
+    max-height: 250px;
     object-fit: contain;
-    display: block; /* 블록 요소로 변경 */
-    margin: 20px auto; /* 중앙 정렬 */
-    border-radius: 8px;
-    border: 4px solid #f0f0f0;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    display: block;
+    margin: 20px auto;
+    border-radius: 4px;
+    border: 2px solid #ddd;
 }
 
-/* 액션 버튼 스타일 */
+/* 액션 버튼 스타일 (GENERATE 버튼) */
 .action-btn {
-    background-color: #ff3e3e;
+    background-color: #111; /* 블랙 */
     color: white;
     padding: 15px 35px;
-    font-size: 1.3em;
+    font-size: 1.2em;
     margin-top: 15px;
+    border-radius: 6px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
 }
 .action-btn:hover {
-    background-color: #e03939;
+    background-color: #333;
+}
+.primary-btn {
+    background-color: #eee;
+    color: #111;
 }
 
 /* 상태 및 QR 코드 영역 */
 .status-text {
-    color: #1a73e8;
-    font-weight: 600;
+    color: #777;
+    font-weight: 500;
     margin-top: 10px;
-}
-.loading-text {
-    color: #ff3e3e;
-    font-style: italic;
-}
-
-.qr-bridge-area {
-    margin-top: 20px;
-    padding: 15px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-}
-.qr-box {
-    margin: 15px auto;
-    padding: 10px;
-    border: 3px solid #1a73e8;
-    display: inline-block;
-    background-color: white;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-.small-btn {
-    padding: 8px 15px;
     font-size: 0.9em;
 }
-
 .safety-note {
     color: #ff3e3e;
-    font-size: 0.9em;
+    font-size: 0.8em;
     margin-top: 5px;
+}
+
+/* QR 코드 스타일 */
+.qr-box {
+    margin: 15px auto;
+    padding: 8px;
+    border: 2px solid #111;
+    display: inline-block;
+    background-color: white;
+}
+.qr-bridge-area {
+    margin-top: 10px;
+    padding: 15px 0;
 }

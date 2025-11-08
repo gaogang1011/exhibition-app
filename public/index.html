@@ -3,49 +3,47 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI 이미지 스튜디오</title>
+    <title>AI IMAGE STUDIO</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 <body>
 <div class="container">
-    <h1>🎨 AI 이미지 변환/생성 스튜디오</h1>
+    <h1>AI STUDIO</h1>
 
-    <div class="mode-selector-wrapper card">
-        <h2>1단계: 작업 모드 선택</h2>
+    <div class="card step-card">
+        <h2>01. MODE</h2>
         <div class="mode-selector">
-            <button class="btn mode-btn active" data-mode="image">📷 PC 파일 변환</button>
-            <button class="btn mode-btn" data-mode="text">📝 텍스트 생성</button>
-            <button class="btn mode-btn" data-mode="qr">📱 모바일 사진 전송</button>
+            <button class="btn mode-btn active" data-mode="image" title="PC 파일 변환"><i class="fas fa-desktop"></i></button>
+            <button class="btn mode-btn" data-mode="text" title="텍스트 생성"><i class="fas fa-keyboard"></i></button>
+            <button class="btn mode-btn" data-mode="qr" title="모바일 사진 전송"><i class="fas fa-qrcode"></i></button>
         </div>
     </div>
 
-    <div class="input-area-wrapper card">
-        <h2>2단계: 원본/설정 입력</h2>
+    <div class="card step-card">
+        <h2>02. INPUT</h2>
 
         <section id="imageMode" class="mode-content">
-            <h3>PC 파일 선택</h3>
             <input type="file" accept="image/*" name="pcImage" id="fileUploader" style="display: none;">
-            <button id="uploadButton" class="btn primary-btn full-width">PC 파일 선택</button>
+            <button id="uploadButton" class="btn primary-btn full-width"><i class="fas fa-upload"></i> PC 파일 선택</button>
             <img id="originalImage" alt="업로드된 원본 이미지" class="preview-img" style="display: none;">
             <p id="fileStatus" class="status-text"></p>
         </section>
 
         <section id="textMode" class="mode-content" style="display: none;">
-            <h3>생성할 이미지 설명</h3>
-            <textarea id="textPromptInput" placeholder="고화질, 미래 도시를 걷는 고양이..." rows="3" class="input-full"></textarea>
-            <p class="safety-note">⚠️ **금지 사항:** 폭력적, 혐오적, 성적 콘텐츠 및 타인 권리 침해는 정책 위반으로 거부됩니다.</p>
+            <textarea id="textPromptInput" placeholder="생성할 이미지를 입력하세요..." rows="3" class="input-full"></textarea>
+            <p class="safety-note">⚠️ 부적절한 내용은 거부됩니다.</p>
         </section>
 
         <section id="qrMode" class="mode-content" style="display: none;">
-            <h3>모바일 사진 전송 (QR 브리지)</h3>
-            <button id="qrUploadStartButton" class="btn primary-btn full-width">QR 코드 생성 시작</button>
+            <button id="qrUploadStartButton" class="btn primary-btn full-width"><i class="fas fa-mobile-alt"></i> QR 생성</button>
 
             <div id="qrBridgeArea" class="qr-bridge-area" style="display: none; text-align: center;">
-                <h4>모바일 업로드 대기 중...</h4>
+                <h4>SCAN TO UPLOAD</h4>
                 <div id="qrcode" class="qr-box"></div>
-                <p id="qrBridgeStatus" class="status-text note">모바일로 스캔 후 사진을 전송하세요.</p>
-                <button id="cancelQrButton" class="btn secondary-btn small-btn">취소</button>
+                <p id="qrBridgeStatus" class="status-text note"></p>
+                <button id="cancelQrButton" class="btn secondary-btn small-btn">CANCEL</button>
             </div>
 
             <img id="qrOriginalImage" alt="QR로 업로드된 이미지" class="preview-img" style="display: none;">
@@ -53,24 +51,24 @@
         </section>
 
         <div id="commonAISettings" class="common-settings">
-            <h4>AI 스타일 및 추가 설정</h4>
-            <textarea id="stylePromptInput" placeholder="AI 스타일 (예: 수채화, 사이버펑크)..." rows="2" class="input-full"></textarea>
+            <h4>03. SETTINGS</h4>
+            <textarea id="stylePromptInput" placeholder="스타일 입력 (예: cinematic, low-poly)" rows="2" class="input-full"></textarea>
             <select id="styleSelect" class="input-full">
-                <option value="default">스타일 선택 (선택 사항)</option>
-                <option value="cartoon">카툰 스타일</option>
-                <option value="oilpainting">유화 스타일</option>
+                <option value="default">STYLE (Optional)</option>
+                <option value="cartoon">Cartoon</option>
+                <option value="oilpainting">Oil Painting</option>
             </select>
         </div>
     </div>
 
-    <div class="action-area card">
-        <h2>3단계: AI 실행</h2>
-        <button id="aiConvertButton" class="btn action-btn full-width">✨ AI 변환/생성 시작</button>
-        <p id="loadingStatus" class="status-text loading-text" style="display: none;">AI 이미지 생성 중입니다. 잠시만 기다려주세요...</p>
+    <div class="card action-area">
+        <button id="aiConvertButton" class="btn action-btn full-width">✨ GENERATE</button>
+        <p id="loadingStatus" class="status-text loading-text" style="display: none;">PROCESSING...</p>
     </div>
 </div>
 
 <script>
+    // ... (이전 답변의 전체 JavaScript 로직을 여기에 붙여넣으세요) ...
     let currentMode = 'image';
     let pcUploadedFile = null;
     let qrUploadedFileName = null;
@@ -114,7 +112,7 @@
         reader.onload = (e) => {
             originalImage.src = e.target.result;
             originalImage.style.display = 'block';
-            fileStatus.textContent = `선택된 파일: ${pcUploadedFile.name}`;
+            fileStatus.textContent = `File: ${pcUploadedFile.name}`;
             qrOriginalImage.style.display = 'none';
         };
         reader.readAsDataURL(pcUploadedFile);
@@ -130,7 +128,7 @@
         currentSessionId = data.sessionId;
         const baseUrl = data.origin;
 
-        if (!currentSessionId) return alert('세션을 시작할 수 없습니다.');
+        if (!currentSessionId) return alert('Session start failed.');
 
         qrBridgeArea.style.display = 'block';
         qrUploadStartButton.style.display = 'none';
@@ -139,7 +137,7 @@
 
         qrcodeDiv.innerHTML = '';
         new QRCode(qrcodeDiv, { text: mobileUploadUrl, width: 150, height: 150 });
-        qrBridgeStatus.textContent = "모바일로 QR 코드를 스캔하세요.";
+        qrBridgeStatus.textContent = "Scan the QR code to upload.";
 
         pollingInterval = setInterval(checkUploadStatus, 1000);
     }
@@ -158,11 +156,11 @@
 
             qrOriginalImage.src = `/images/uploads/${qrUploadedFileName}`;
             qrOriginalImage.style.display = 'block';
-            qrFileStatus.textContent = `업로드 완료: ${data.fileInfo.originalName}`;
+            qrFileStatus.textContent = `Upload complete: ${data.fileInfo.originalName}`;
 
             qrBridgeArea.style.display = 'none';
             qrUploadStartButton.style.display = 'inline-block';
-            alert('모바일 파일 업로드 완료! AI 변환을 시작해주세요.');
+            alert('Mobile upload complete. Start generation.');
         }
     }
 
@@ -191,7 +189,7 @@
         } else if (currentMode === 'text' && prompt) {
             // Text to Image: 파일 필요 없음
         } else {
-            return alert(`[${currentMode} 모드]에 필요한 입력이 부족합니다.`);
+            return alert(`[${currentMode} Mode] Missing input.`);
         }
 
         const loadingStatus = document.getElementById('loadingStatus');
@@ -202,7 +200,7 @@
 
             if (!response.ok) {
                 const errorData = await response.json();
-                alert(errorData.error || 'AI 이미지 생성에 실패했습니다. (서버 오류)');
+                alert(errorData.error || 'Generation failed (Server Error)');
                 return;
             }
 
@@ -211,17 +209,16 @@
             if (data.aiImageUrl) {
                 window.location.href = `download.html?url=${encodeURIComponent(data.aiImageUrl)}`;
             } else {
-                alert('AI 변환 결과 URL을 받지 못했습니다.');
+                alert('Result URL not received.');
             }
         } catch(e) {
-            alert('네트워크 또는 예상치 못한 오류가 발생했습니다.');
+            alert('Network error.');
             console.error("Fetch/System Error:", e);
         } finally {
             loadingStatus.style.display = 'none';
         }
     });
 
-    // 초기 모드 활성화 (PC 이미지 변환)
     document.querySelector('.mode-btn[data-mode="image"]').click();
 </script>
 </body>
