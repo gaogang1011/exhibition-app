@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI IMAGE STUDIO</title>
-    <link rel="stylesheet" href="style.css">
+    <title>AI Studio</title> <link rel="stylesheet" href="style.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 
@@ -88,7 +87,6 @@
     let currentSessionId = null;
     let pollingInterval = null;
 
-    // ... (DOM Element Variables and UI/QR Logic - NO CHANGE)
     const fileUploader = document.getElementById('fileUploader');
     const uploadButton = document.getElementById('uploadButton');
     const originalImage = document.getElementById('originalImage');
@@ -104,6 +102,7 @@
     const fullScreenLoading = document.getElementById('fullScreenLoading');
 
     // --- 모드 전환, 업로드, QR 로직 (유지) ---
+
     document.querySelectorAll('.mode-btn').forEach(button => {
         button.addEventListener('click', () => {
             currentMode = button.dataset.mode;
@@ -185,7 +184,7 @@
         qrUploadStartButton.style.display = 'inline-block';
     }
 
-    // --- AI 변환 버튼 클릭 시 (핵심 로직: 안전 필터 및 리디렉션 수정) ---
+    // --- AI 변환 버튼 클릭 시 (핵심 로직: 리디렉션) ---
     document.getElementById('aiConvertButton').addEventListener('click', async () => {
         let prompt = document.getElementById('textPromptInput').value;
         const style = document.getElementById('styleSelect').value;
@@ -207,7 +206,6 @@
         if (safetyViolation) {
             return alert('⚠️ 콘텐츠 정책 위반 가능성이 있는 키워드(예: 폭력, 성적인 단어)가 감지되었습니다. 내용을 수정해주세요.');
         }
-        // ⭐️ 안전 필터링 로직 끝
 
         const formData = new FormData();
         formData.append('prompt', fullPrompt);
@@ -224,7 +222,7 @@
             return alert(`[${currentMode} Mode] Missing input.`);
         }
 
-        fullScreenLoading.style.display = 'flex';
+        fullScreenLoading.style.display = 'flex'; // 전체 화면 로딩 표시
 
         try {
             const response = await fetch('/api/ai-process', { method: 'POST', body: formData });
@@ -239,10 +237,9 @@
             const data = await response.json();
 
             if (data.filename) {
-                // ⭐️ [Feature 1] visionDescription 및 mode를 쿼리 파라미터로 추가
+                // ⭐️ [수정] Vision Feedback과 file name을 포함하여 download.html로 리디렉션
                 let redirectUrl = `download.html?file=${data.filename}&mode=${data.mode}`;
                 if (data.visionDescription) {
-                    // URL 인코딩하여 긴 텍스트도 안전하게 전달
                     redirectUrl += `&desc=${encodeURIComponent(data.visionDescription)}`;
                 }
                 window.location.href = redirectUrl;

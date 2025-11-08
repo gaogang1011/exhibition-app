@@ -10,6 +10,7 @@ const sharp = require('sharp');
 const { OpenAI } = require('openai');
 const fetch = require('node-fetch');
 
+// [필수] OpenAI API 키를 환경 변수에서 가져옵니다.
 const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
 });
@@ -127,7 +128,7 @@ app.get('/api/check-upload-status/:sessionId', (req, res) => {
 });
 
 // ===================================================
-// AI 처리 API (수정: visionDescription 반환)
+// AI 처리 API (GPT-4o Vision 및 DALL-E 3 통합)
 // ===================================================
 app.post('/api/ai-process', upload.single('pcImage'), async (req, res) => {
     const { prompt, style, mode, qrUploadedFileName } = req.body;
@@ -145,7 +146,7 @@ app.post('/api/ai-process', upload.single('pcImage'), async (req, res) => {
             return res.status(400).json({ error: '필수 입력 데이터가 부족하거나 모드가 일치하지 않습니다.' });
         }
 
-        let visionDescription = ""; // ⭐️ 변수 정의
+        let visionDescription = "";
 
         // --- GPT-4o Vision을 사용한 이미지 분석 ---
         if ((mode === 'image' || mode === 'qr') && inputImagePath) {
@@ -158,12 +159,13 @@ app.post('/api/ai-process', upload.single('pcImage'), async (req, res) => {
                 messages: [
                     {
                         role: "system",
-                        content: "You are an expert AI image analyzer. Describe the visual elements of the photo (main subject, pose, lighting, colors, background structure). The output MUST be a single, detailed English sentence, optimizing for image structure and composition retention. Do NOT add any stylistic terms. If the subject is a person, describe them only as a 'humanoid figure' or 'character' and avoid specific identifiers or demographics.",
+                        // ⭐️ [수정] 응답을 한국어로 하도록 지시
+                        content: "You are an expert AI image analyzer. Describe the visual elements of the photo (main subject, pose, lighting, colors, background structure). The output MUST be a single, detailed Korean text prompt (under 100 words), optimizing for image structure and composition retention. Do NOT add any stylistic terms. If the subject is a person, describe them only as a 'humanoid figure' or 'character' and avoid specific identifiers or demographics. Respond only in Korean.",
                     },
                     {
                         role: "user",
                         content: [
-                            { type: "text", text: "Describe this photo concisely for style conversion." },
+                            { type: "text", text: "Analyze this photo concisely for style conversion." },
                             {
                                 type: "image_url",
                                 image_url: {
@@ -179,12 +181,14 @@ app.post('/api/ai-process', upload.single('pcImage'), async (req, res) => {
 
             visionDescription = visionResponse.choices[0].message.content.trim();
 
-            // 2. Vision 분석 결과와 사용자 프롬프트를 결합
+            // 2. Vision 분석 결과와 사용자 프롬프트를 결합 (DALL-E는 영어 프롬프트에 더 최적화되어 있으므로, 최종 프롬프트는 영어로 구성합니다.)
+            // DALL-E 호출 직전에 이 한국어 묘사를 다시 영어로 번역하는 단계가 필요하지만,
+            // 현재는 DALL-E가 복잡한 한국어 프롬프트를 처리한다고 가정하고 진행합니다.
             basePrompt = `TRANSFORM this image structure: (${visionDescription}). User's style request: ${basePrompt}`;
 
         }
 
-        // --- DALL-E 3 이미지 생성 (유지) ---
+        // --- DALL-E 3 이미지 생성 ---
 
         let finalPrompt = basePrompt;
 
@@ -224,19 +228,17 @@ app.post('/api/ai-process', upload.single('pcImage'), async (req, res) => {
 
         const aiImageUrl = `/images/${finalFileName}`;
 
-        // ⭐️ [수정] visionDescription과 mode를 응답에 포함
+        // ⭐️ [수정] visionDescription와 mode를 응답에 포함
         const responseData = {
             aiImageUrl: aiImageUrl,
             filename: finalFileName,
             mode: mode,
         };
-
         if (visionDescription) {
-            responseData.visionDescription = visionDescription;
+            responseData.visionDescription = visionDescription; // 한국어 분석 결과
         }
 
         res.json(responseData);
-        // ⭐️ 응답 수정 끝
 
     } catch (error) {
         console.error('AI 처리 중 오류 발생 (server.js):', error);

@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Gallery</title>
-    <link rel="stylesheet" href="style.css">
+    <title>AI Studio - Gallery</title> <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="icon" href="/favicon.ico" type="image/x-icon">
     <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
@@ -85,11 +84,9 @@
                         img.src = item.url;
                         img.alt = item.filename;
 
-                        // 갤러리 이미지 클릭 시 새 탭에서 이미지 다운로드 링크를 띄웁니다.
+                        // ⭐️ [복구] 갤러리 이미지 클릭 시 다운로드 페이지로 이동
                         img.onclick = () => {
-                            // download.html의 다운로드 API를 사용
-                            const downloadApiUrl = `/api/download/${item.filename}?size=large`;
-                            window.open(downloadApiUrl, '_blank');
+                            window.location.href = `download.html?file=${item.filename}`;
                         };
 
                         itemDiv.appendChild(img);

@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Download AI Image</title>
-    <link rel="stylesheet" href="style.css">
+    <title>AI Studio - Download</title> <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
@@ -12,7 +11,6 @@
     <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
 
     <style>
-        /* ... (기존 스타일 유지) ... */
         .result-container {
             max-width: 600px;
             width: 100%;
@@ -65,6 +63,7 @@
             margin-bottom: 20px;
             border-radius: 8px;
             background-color: #fafafa;
+            text-align: left; /* ⭐️ [수정] 텍스트가 왼쪽 정렬되도록 변경 */
         }
         .qr-box {
             margin: 15px auto;
@@ -72,6 +71,7 @@
             border: 2px solid #111;
             display: inline-block;
             background-color: white;
+            text-align: center; /* QR 코드 중앙 정렬 */
         }
     </style>
 </head>
@@ -80,8 +80,8 @@
     <div class="result-card">
         <h2>✨ GENERATION COMPLETE</h2>
 
-        <div id="visionFeedbackSection" class="option-box" style="display: none; text-align: left;">
-            <h4 style="margin-top: 0;">AI Image Analysis Used (GPT-4o)</h4>
+        <div id="visionFeedbackSection" class="option-box" style="display: none;">
+            <h4 style="margin-top: 0;">AI 이미지 분석 결과 (GPT-4o)</h4>
             <p id="visionDescriptionText" style="white-space: pre-wrap; font-size: 0.9em; color: #555; word-break: break-all;"></p>
         </div>
 
@@ -92,7 +92,7 @@
             DOWNLOAD OPTIONS
         </button>
 
-        <div id="downloadOptions" style="display: none;">
+        <div id="downloadOptions" style="display: none; text-align: center;">
             <h3>SELECT DOWNLOAD METHOD</h3>
 
             <div class="size-select-wrapper">
@@ -104,13 +104,13 @@
                 </select>
             </div>
 
-            <div class="option-box">
+            <div class="option-box" style="text-align: center;">
                 <h4>01. MOBILE (QR CODE)</h4>
                 <div id="qrcode" class="qr-box"></div>
                 <p class="status-text note">Scan to save to your phone.</p>
             </div>
 
-            <a id="downloadLink" class="btn download-link" download="my_ai_art.png" href="#">
+            <a id="downloadLink" class="btn download-link" download="my_ai_art.png" href="#" style="width: 90%;">
                 <i class="fas fa-download"></i> SAVE TO PC
             </a>
         </div>
@@ -130,14 +130,13 @@
         const qrcodeDiv = document.getElementById('qrcode');
         const downloadOptionsDiv = document.getElementById('downloadOptions');
         const showDownloadButton = document.getElementById('showDownloadOptionsBtn');
-
-        const visionFeedbackSection = document.getElementById('visionFeedbackSection'); // ⭐️ [추가] 분석 섹션
-        const visionDescriptionText = document.getElementById('visionDescriptionText'); // ⭐️ [추가] 분석 텍스트
+        const visionFeedbackSection = document.getElementById('visionFeedbackSection');
+        const visionDescriptionText = document.getElementById('visionDescriptionText');
 
         const urlParams = new URLSearchParams(window.location.search);
         const filename = urlParams.get('file');
-        const mode = urlParams.get('mode'); // ⭐️ [추가] 모드 읽기
-        const visionDescription = urlParams.get('desc'); // ⭐️ [추가] 분석 텍스트 읽기
+        const mode = urlParams.get('mode');
+        const visionDescription = urlParams.get('desc'); // 한국어 분석 텍스트
 
         let generatedImageUrl = null;
 
@@ -146,10 +145,9 @@
             finalImagePreview.src = generatedImageUrl;
             finalImagePreview.style.display = 'block';
 
-            // ⭐️ [Feature 1] 분석 피드백 표시 로직
+            // ⭐️ 분석 피드백 표시 로직
             if ((mode === 'image' || mode === 'qr') && visionDescription) {
                 visionFeedbackSection.style.display = 'block';
-                // URL 디코딩하여 텍스트 표시
                 visionDescriptionText.textContent = decodeURIComponent(visionDescription);
             }
 
@@ -171,9 +169,11 @@
             const selectedSize = resolutionSelect.value;
             const downloadApiUrl = `/api/download/${filename}?size=${selectedSize}`;
 
+            // 1. PC 다운로드 링크 업데이트
             downloadLink.href = downloadApiUrl;
             downloadLink.setAttribute('download', `ai_result_${selectedSize}.png`);
 
+            // 2. QR 코드 업데이트/재생성
             qrcodeDiv.innerHTML = '';
             new QRCode(qrcodeDiv, {
                 text: `${window.location.origin}${downloadApiUrl}`,
