@@ -47,7 +47,7 @@ app.use(express.static(PUBLIC_PATH));
 app.use(express.json());
 
 // ===================================================
-// 보조 함수: 이미지를 Base64로 인코딩
+// 보조 함수: 이미지를 Base64로 인코딩 (유지)
 // ===================================================
 function imageToBase64(filePath) {
     if (!fs.existsSync(filePath)) {
@@ -78,7 +78,7 @@ function imageToBase64(filePath) {
 }
 
 // ===================================================
-// PC-모바일 브리지 API
+// PC-모바일 브리지 API (유지)
 // ===================================================
 
 app.get('/api/start-upload-session', (req, res) => {
@@ -127,7 +127,7 @@ app.get('/api/check-upload-status/:sessionId', (req, res) => {
 });
 
 // ===================================================
-// AI 처리 API (GPT-4o Vision 및 DALL-E 3 통합)
+// AI 처리 API (수정: visionDescription 반환)
 // ===================================================
 app.post('/api/ai-process', upload.single('pcImage'), async (req, res) => {
     const { prompt, style, mode, qrUploadedFileName } = req.body;
@@ -145,7 +145,7 @@ app.post('/api/ai-process', upload.single('pcImage'), async (req, res) => {
             return res.status(400).json({ error: '필수 입력 데이터가 부족하거나 모드가 일치하지 않습니다.' });
         }
 
-        let visionDescription = "";
+        let visionDescription = ""; // ⭐️ 변수 정의
 
         // --- GPT-4o Vision을 사용한 이미지 분석 ---
         if ((mode === 'image' || mode === 'qr') && inputImagePath) {
@@ -184,19 +184,17 @@ app.post('/api/ai-process', upload.single('pcImage'), async (req, res) => {
 
         }
 
-        // --- DALL-E 3 이미지 생성 ---
+        // --- DALL-E 3 이미지 생성 (유지) ---
 
         let finalPrompt = basePrompt;
 
         if (mode === 'image' || mode === 'qr') {
-            // [최종 최적화] DALL-E에게 '변환'을 강제하는 강력한 프롬프트 구조 사용
             finalPrompt =
                 `Based on the content described: "${visionDescription}". ` +
                 `The user wants to transform this exact composition into the requested style. ` +
                 `Maintain the subject's pose, the overall composition, and the color scheme. ` +
                 `Style: ${style}. User refinement: ${basePrompt}. Highly detailed, photorealistic quality.`;
         } else {
-            // 텍스트 모드
             finalPrompt = `${basePrompt} in ${style} style. Highly detailed and cinematic quality.`;
         }
 
@@ -226,7 +224,19 @@ app.post('/api/ai-process', upload.single('pcImage'), async (req, res) => {
 
         const aiImageUrl = `/images/${finalFileName}`;
 
-        res.json({ aiImageUrl: aiImageUrl, filename: finalFileName });
+        // ⭐️ [수정] visionDescription과 mode를 응답에 포함
+        const responseData = {
+            aiImageUrl: aiImageUrl,
+            filename: finalFileName,
+            mode: mode,
+        };
+
+        if (visionDescription) {
+            responseData.visionDescription = visionDescription;
+        }
+
+        res.json(responseData);
+        // ⭐️ 응답 수정 끝
 
     } catch (error) {
         console.error('AI 처리 중 오류 발생 (server.js):', error);
@@ -247,7 +257,7 @@ app.post('/api/ai-process', upload.single('pcImage'), async (req, res) => {
 });
 
 // ===================================================
-// 갤러리 목록 API
+// 갤러리 및 다운로드 API (유지)
 // ===================================================
 app.get('/api/gallery-list', (req, res) => {
     try {
@@ -269,9 +279,6 @@ app.get('/api/gallery-list', (req, res) => {
     }
 });
 
-// ===================================================
-// 다운로드 강제 및 해상도 선택 API
-// ===================================================
 app.get('/api/download/:filename', async (req, res) => {
     const filename = req.params.filename;
     const size = req.query.size;

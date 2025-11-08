@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI STUDIO</title>
+    <title>AI IMAGE STUDIO</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
@@ -19,7 +19,7 @@
     <h1>AI STUDIO <i class="fas fa-paint-brush"></i></h1>
 
     <div class="card step-card">
-        <h2>MODE</h2>
+        <h2>01. MODE</h2>
         <div class="mode-selector">
             <button class="btn mode-btn active" data-mode="image" title="PC 파일 변환"><i class="fas fa-desktop"></i></button>
             <button class="btn mode-btn" data-mode="text" title="텍스트 생성"><i class="fas fa-keyboard"></i></button>
@@ -28,7 +28,7 @@
     </div>
 
     <div class="card step-card">
-        <h2>INPUT</h2>
+        <h2>02. INPUT</h2>
 
         <section id="imageMode" class="mode-content">
             <input type="file" accept="image/*" name="pcImage" id="fileUploader" style="display: none;">
@@ -57,7 +57,7 @@
         </section>
 
         <div id="commonAISettings" class="common-settings">
-            <h4>SETTINGS</h4>
+            <h4>03. SETTINGS</h4>
             <textarea id="stylePromptInput" placeholder="스타일 입력 (예: cinematic, low-poly)" rows="2" class="input-full"></textarea>
             <select id="styleSelect" class="input-full">
                 <option value="default">STYLE (Optional)</option>
@@ -88,6 +88,7 @@
     let currentSessionId = null;
     let pollingInterval = null;
 
+    // ... (DOM Element Variables and UI/QR Logic - NO CHANGE)
     const fileUploader = document.getElementById('fileUploader');
     const uploadButton = document.getElementById('uploadButton');
     const originalImage = document.getElementById('originalImage');
@@ -103,7 +104,6 @@
     const fullScreenLoading = document.getElementById('fullScreenLoading');
 
     // --- 모드 전환, 업로드, QR 로직 (유지) ---
-
     document.querySelectorAll('.mode-btn').forEach(button => {
         button.addEventListener('click', () => {
             currentMode = button.dataset.mode;
@@ -185,14 +185,32 @@
         qrUploadStartButton.style.display = 'inline-block';
     }
 
-    // --- AI 변환 버튼 클릭 시 (핵심 로직: 리디렉션) ---
+    // --- AI 변환 버튼 클릭 시 (핵심 로직: 안전 필터 및 리디렉션 수정) ---
     document.getElementById('aiConvertButton').addEventListener('click', async () => {
         let prompt = document.getElementById('textPromptInput').value;
         const style = document.getElementById('styleSelect').value;
         const stylePrompt = document.getElementById('stylePromptInput').value;
 
+        // ⭐️ [Feature 2] 프롬프트 안전 필터링 로직
+        const DANGER_KEYWORDS = ['sex', 'nude', 'violence', 'gun', 'weapon', 'gore', 'child abuse', 'explicit', 'hate speech', 'bloody'];
+        const fullPrompt = prompt + (stylePrompt ? ', ' + stylePrompt : '');
+        const lowerCasePrompt = fullPrompt.toLowerCase();
+
+        let safetyViolation = false;
+        for (const keyword of DANGER_KEYWORDS) {
+            if (lowerCasePrompt.includes(keyword)) {
+                safetyViolation = true;
+                break;
+            }
+        }
+
+        if (safetyViolation) {
+            return alert('⚠️ 콘텐츠 정책 위반 가능성이 있는 키워드(예: 폭력, 성적인 단어)가 감지되었습니다. 내용을 수정해주세요.');
+        }
+        // ⭐️ 안전 필터링 로직 끝
+
         const formData = new FormData();
-        formData.append('prompt', prompt + (stylePrompt ? ', ' + stylePrompt : ''));
+        formData.append('prompt', fullPrompt);
         formData.append('style', style);
         formData.append('mode', currentMode);
 
@@ -206,7 +224,7 @@
             return alert(`[${currentMode} Mode] Missing input.`);
         }
 
-        fullScreenLoading.style.display = 'flex'; // ⭐️ [복구] 전체 화면 로딩 표시
+        fullScreenLoading.style.display = 'flex';
 
         try {
             const response = await fetch('/api/ai-process', { method: 'POST', body: formData });
@@ -221,8 +239,13 @@
             const data = await response.json();
 
             if (data.filename) {
-                // ⭐️ [복구] 로딩 후 download.html로 리디렉션
-                window.location.href = `download.html?file=${data.filename}`;
+                // ⭐️ [Feature 1] visionDescription 및 mode를 쿼리 파라미터로 추가
+                let redirectUrl = `download.html?file=${data.filename}&mode=${data.mode}`;
+                if (data.visionDescription) {
+                    // URL 인코딩하여 긴 텍스트도 안전하게 전달
+                    redirectUrl += `&desc=${encodeURIComponent(data.visionDescription)}`;
+                }
+                window.location.href = redirectUrl;
             } else {
                 alert('Result URL not received.');
                 fullScreenLoading.style.display = 'none';
