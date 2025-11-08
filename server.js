@@ -78,7 +78,7 @@ function imageToBase64(filePath) {
 }
 
 // ===================================================
-// PC-모바일 브리지 API (유지)
+// PC-모바일 브리지 API
 // ===================================================
 
 app.get('/api/start-upload-session', (req, res) => {
@@ -127,7 +127,7 @@ app.get('/api/check-upload-status/:sessionId', (req, res) => {
 });
 
 // ===================================================
-// AI 처리 API (프롬프트 최적화)
+// AI 처리 API (GPT-4o Vision 및 DALL-E 3 통합)
 // ===================================================
 app.post('/api/ai-process', upload.single('pcImage'), async (req, res) => {
     const { prompt, style, mode, qrUploadedFileName } = req.body;
@@ -158,13 +158,12 @@ app.post('/api/ai-process', upload.single('pcImage'), async (req, res) => {
                 messages: [
                     {
                         role: "system",
-                        // [수정] DALL-E에게 필요한 상세 묘사만 요청하며 인물 식별 정보 회피
-                        content: "You are an expert AI image analyzer. Describe ONLY the core visual elements needed for image generation (composition, subject, pose, background, colors, lighting). Do NOT mention any style, art medium, or names. If the subject is a person, describe them ONLY as a 'character' or 'figure' and avoid specific identifiers.",
+                        content: "You are an expert AI image analyzer. Describe the visual elements of the photo (main subject, pose, lighting, colors, background structure). The output MUST be a single, detailed English sentence, optimizing for image structure and composition retention. Do NOT add any stylistic terms. If the subject is a person, describe them only as a 'humanoid figure' or 'character' and avoid specific identifiers or demographics.",
                     },
                     {
                         role: "user",
                         content: [
-                            { type: "text", text: "Analyze this photo and provide a concise, detailed description for style conversion." },
+                            { type: "text", text: "Describe this photo concisely for style conversion." },
                             {
                                 type: "image_url",
                                 image_url: {
@@ -179,9 +178,13 @@ app.post('/api/ai-process', upload.single('pcImage'), async (req, res) => {
             });
 
             visionDescription = visionResponse.choices[0].message.content.trim();
+
+            // 2. Vision 분석 결과와 사용자 프롬프트를 결합
+            basePrompt = `TRANSFORM this image structure: (${visionDescription}). User's style request: ${basePrompt}`;
+
         }
 
-        // --- DALL-E 3 이미지 생성 (프롬프트 재구성) ---
+        // --- DALL-E 3 이미지 생성 ---
 
         let finalPrompt = basePrompt;
 

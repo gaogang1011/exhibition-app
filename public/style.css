@@ -50,7 +50,7 @@ h3, h4 {
     padding: 12px 20px;
     margin: 8px 5px;
     cursor: pointer;
-    border: 1px solid #111; /* 테두리 추가 */
+    border: 1px solid #111;
     border-radius: 4px;
     font-weight: bold;
     transition: all 0.2s ease-in-out;
@@ -58,6 +58,7 @@ h3, h4 {
     display: inline-block;
     background-color: white;
     color: #111;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 .full-width {
     width: 90%;
@@ -65,7 +66,7 @@ h3, h4 {
     font-size: 1em;
 }
 
-/* 모드 선택 버튼 스타일 (아이콘 중심) */
+/* 모드 선택 버튼 스타일 */
 .mode-selector {
     display: flex;
     justify-content: space-around;
@@ -80,7 +81,7 @@ h3, h4 {
     color: #555;
 }
 .mode-selector .mode-btn.active {
-    background-color: #111; /* 활성화 시 블랙 */
+    background-color: #111;
     color: white;
     border-color: #111;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
@@ -100,22 +101,26 @@ h3, h4 {
     box-sizing: border-box;
     transition: border-color 0.2s;
 }
+.input-full:focus {
+    border-color: #111;
+    outline: none;
+}
 
-/* 이미지 미리보기 스타일 */
+/* [수정 완료] 이미지 미리보기 크기 확대 및 중앙 정렬 */
 .preview-img {
-    max-width: 90%;
-    max-height: 500px;
-    object-fit: contain;
     display: block;
-    margin: 20px auto;
-    border-radius: 8px;
-    border: 1px solid #eee;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    max-width: 90%; /* 화면의 90%까지 최대로 확장 */
+    max-height: 500px; /* 높이도 어느 정도 제한 (커졌습니다!) */
+    margin: 20px auto; /* 중앙 정렬 */
+    object-fit: contain;
+    border-radius: 4px;
+    border: 2px solid #ddd;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 /* 액션 버튼 스타일 (GENERATE 버튼) */
 .action-btn {
-    background-color: #111; /* 블랙 */
+    background-color: #111;
     color: white;
     padding: 15px 35px;
     font-size: 1.2em;
@@ -138,13 +143,15 @@ h3, h4 {
     margin-top: 10px;
     font-size: 0.9em;
 }
-.safety-note {
+.loading-text {
     color: #ff3e3e;
-    font-size: 0.8em;
-    margin-top: 5px;
+    font-style: italic;
 }
 
-/* QR 코드 스타일 */
+.qr-bridge-area {
+    margin-top: 20px;
+    padding: 15px 0;
+}
 .qr-box {
     margin: 15px auto;
     padding: 8px;
@@ -152,7 +159,8 @@ h3, h4 {
     display: inline-block;
     background-color: white;
 }
-.qr-bridge-area {
-    margin-top: 10px;
-    padding: 15px 0;
+.safety-note {
+    color: #ff3e3e;
+    font-size: 0.8em;
+    margin-top: 5px;
 }

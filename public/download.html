@@ -6,8 +6,10 @@
     <title>DOWNLOAD</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
     <link rel="icon" href="/favicon.ico" type="image/x-icon">
     <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+
     <style>
         /* download.html 전용 스타일 */
         .download-link {
@@ -71,7 +73,6 @@
             const downloadApiUrl = `/api/download/${filename}`;
 
             document.getElementById('finalImagePreview').src = decodedUrl;
-            console.log("Displaying AI image from:", decodedUrl);
 
             document.getElementById('showDownloadOptionsBtn').addEventListener('click', () => {
                 document.getElementById('downloadOptions').style.display = 'block';
