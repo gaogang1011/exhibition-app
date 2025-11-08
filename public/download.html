@@ -58,7 +58,6 @@
             border: 1px solid #ccc;
             font-size: 0.9em;
         }
-        /* [추가] QR 코드 섹션 스타일 */
         .option-box {
             border: 1px solid #ccc;
             padding: 20px;
@@ -83,24 +82,33 @@
         <img id="finalImagePreview" alt="AI 결과 이미지" class="preview-img" style="display: none;">
         <p id="errorStatus" style="color: red; display: none;">이미지를 로드할 수 없습니다.</p>
 
-        <div class="size-select-wrapper">
-            <label for="resolutionSelect">Download Size:</label>
-            <select id="resolutionSelect">
-                <option value="large">Large (Original 1024px)</option>
-                <option value="medium">Medium (1024px, Optimized)</option>
-                <option value="small">Small (512px)</option>
-            </select>
+        <button id="showDownloadOptionsBtn" class="btn download-link" style="font-size: 1.1em; padding: 15px 30px;">
+            DOWNLOAD OPTIONS
+        </button>
+
+        <div id="downloadOptions" style="display: none;">
+            <h3>SELECT DOWNLOAD METHOD</h3>
+
+            <div class="size-select-wrapper">
+                <label for="resolutionSelect">Download Size:</label>
+                <select id="resolutionSelect">
+                    <option value="large">Large (Original 1024px)</option>
+                    <option value="medium">Medium (1024px, Optimized)</option>
+                    <option value="small">Small (512px)</option>
+                </select>
+            </div>
+
+            <div class="option-box">
+                <h4>01. MOBILE (QR CODE)</h4>
+                <div id="qrcode" class="qr-box"></div>
+                <p class="status-text note">Scan to save to your phone.</p>
+            </div>
+
+            <a id="downloadLink" class="btn download-link" download="my_ai_art.png" href="#">
+                <i class="fas fa-download"></i> SAVE TO PC
+            </a>
         </div>
 
-        <div class="option-box">
-            <h4>01. MOBILE (QR CODE)</h4>
-            <div id="qrcode" class="qr-box"></div>
-            <p class="status-text note">Scan to save to your phone.</p>
-        </div>
-
-        <a id="downloadLink" class="btn download-link" download="my_ai_art.png" href="#">
-            <i class="fas fa-download"></i> SAVE TO PC
-        </a>
         <a href="index.html" class="btn go-back-btn">
             ↩️ START NEW GENERATION
         </a>
@@ -114,6 +122,9 @@
         const downloadLink = document.getElementById('downloadLink');
         const errorStatus = document.getElementById('errorStatus');
         const qrcodeDiv = document.getElementById('qrcode');
+        const downloadOptionsDiv = document.getElementById('downloadOptions'); // ⭐️ [추가] 옵션 DIV
+
+        const showDownloadButton = document.getElementById('showDownloadOptionsBtn'); // ⭐️ [추가] 옵션 표시 버튼
 
         const urlParams = new URLSearchParams(window.location.search);
         const filename = urlParams.get('file');
@@ -127,7 +138,13 @@
 
             // 초기 해상도 설정 (Large)
             resolutionSelect.value = 'large';
-            updateDownloadLinks(filename);
+
+            // ⭐️ [복구] 'DOWNLOAD OPTIONS' 버튼 클릭 시 기능 활성화
+            showDownloadButton.addEventListener('click', () => {
+                downloadOptionsDiv.style.display = 'block'; // 옵션 섹션 표시
+                showDownloadButton.style.display = 'none'; // 옵션 버튼 숨김
+                updateDownloadLinks(filename); // 초기 링크 설정 및 QR 코드 생성
+            });
 
             // 해상도 변경 시 다운로드 링크 업데이트 이벤트 리스너 추가
             resolutionSelect.addEventListener('change', () => updateDownloadLinks(filename));
