@@ -27,6 +27,9 @@
             border-radius: 8px;
             background-color: #fafafa;
         }
+        .size-select-wrapper {
+            margin-bottom: 20px;
+        }
     </style>
 </head>
 <body>
@@ -42,6 +45,15 @@
 
     <div id="downloadOptions" style="display: none;">
         <h3>SELECT DOWNLOAD METHOD</h3>
+
+        <div class="size-select-wrapper">
+            <label for="resolutionSelect">Download Size:</label>
+            <select id="resolutionSelect">
+                <option value="large">Large (Original 1024px)</option>
+                <option value="medium">Medium (1024px, Optimized)</option>
+                <option value="small">Small (512px)</option>
+            </select>
+        </div>
 
         <div class="option-box">
             <h4>01. MOBILE (QR CODE)</h4>
@@ -66,21 +78,43 @@
     document.addEventListener('DOMContentLoaded', () => {
         const urlParams = new URLSearchParams(window.location.search);
         const aiImageUrl = urlParams.get('url');
+        const resolutionSelect = document.getElementById('resolutionSelect');
+
+        let filename = null;
 
         if (aiImageUrl) {
             const decodedUrl = decodeURIComponent(aiImageUrl);
-            const filename = decodedUrl.split('/').pop();
-            const downloadApiUrl = `/api/download/${filename}`;
+            filename = decodedUrl.split('/').pop();
 
             document.getElementById('finalImagePreview').src = decodedUrl;
 
             document.getElementById('showDownloadOptionsBtn').addEventListener('click', () => {
                 document.getElementById('downloadOptions').style.display = 'block';
                 document.getElementById('showDownloadOptionsBtn').style.display = 'none';
+                updateDownloadLinks(); // 옵션 표시 시 링크 업데이트
             });
 
-            document.getElementById('downloadLink').href = downloadApiUrl;
+            resolutionSelect.addEventListener('change', updateDownloadLinks); // 해상도 변경 시 링크 업데이트
 
+        } else {
+            alert('Result not found. Returning to main page.');
+            window.location.href = 'index.html';
+        }
+
+        // [핵심 로직] 해상도에 따라 다운로드 URL을 업데이트하는 함수
+        function updateDownloadLinks() {
+            if (!filename) return;
+
+            const selectedSize = resolutionSelect.value;
+            // /api/download/파일명?size=선택된 해상도
+            const downloadApiUrl = `/api/download/${filename}?size=${selectedSize}`;
+
+            // 1. PC 다운로드 링크 업데이트
+            document.getElementById('downloadLink').href = downloadApiUrl;
+            document.getElementById('downloadLink').setAttribute('download', `${filename.replace('.png', '')}_${selectedSize}.png`);
+
+            // 2. QR 코드 재생성 (URL에 해상도 포함)
+            document.getElementById("qrcode").innerHTML = ''; // 기존 QR 제거
             new QRCode(document.getElementById("qrcode"), {
                 text: `${window.location.origin}${downloadApiUrl}`,
                 width: 200,
@@ -89,10 +123,6 @@
                 colorLight : "#ffffff",
                 correctLevel : QRCode.CorrectLevel.H
             });
-
-        } else {
-            alert('Result not found. Returning to main page.');
-            window.location.href = 'index.html';
         }
     });
 </script>
