@@ -2,7 +2,7 @@
 
 /* 기본 설정 */
 * {
-    box-sizing: border-box; /* ⭐️ [수정] 모든 요소에 box-sizing 적용하여 padding과 border가 width/height에 포함되도록 함 (쏠림 방지 핵심) */
+    box-sizing: border-box;
 }
 body {
     font-family: 'Helvetica Neue', Arial, sans-serif;
@@ -17,14 +17,16 @@ body {
 }
 .container {
     max-width: 700px;
-    width: 100%; /* 화면 폭 전체 사용 */
-    text-align: center;
+    width: 100%;
+    text-align: center; /* ⭐️ [핵심] 컨테이너 내 모든 인라인 요소를 중앙 정렬 */
 }
 h1 {
     color: #111;
     margin-bottom: 30px;
     font-weight: 800;
     letter-spacing: 2px;
+    padding-top: 20px; /* 모바일 겹침 방지 */
+    margin-top: 10px;
 }
 h1 i {
     margin-left: 10px;
@@ -65,7 +67,7 @@ h3, h4 {
     display: inline-block;
     background-color: white;
     color: #111;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* 그림자 유지 */
 }
 .full-width {
     width: 90%;
@@ -73,13 +75,13 @@ h3, h4 {
     font-size: 1em;
 }
 
-/* 모드 선택 버튼 스타일 (수정: 좁은 화면에서 유연하게 줄 바꿈 가능하도록 flex-wrap 추가) */
+/* 모드 선택 버튼 스타일 */
 .mode-selector {
     display: flex;
     justify-content: space-around;
     gap: 5px;
     margin-top: 15px;
-    flex-wrap: wrap; /* ⭐️ [수정] 화면이 좁아지면 버튼이 줄바꿈 되도록 설정 */
+    flex-wrap: wrap;
 }
 .mode-selector .mode-btn {
     flex-grow: 1;
@@ -87,7 +89,7 @@ h3, h4 {
     font-size: 1.1em;
     border: 1px solid #ddd;
     color: #555;
-    min-width: 150px; /* ⭐️ [추가] 너무 작아지지 않도록 최소 너비 설정 */
+    min-width: 150px;
 }
 .mode-selector .mode-btn.active {
     background-color: #111;
@@ -96,19 +98,21 @@ h3, h4 {
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
     transform: translateY(-2px);
 }
-.mode-selector .mode-btn:not(.active):hover {
-    background-color: #fafafa;
-}
 
 /* 입력 필드 스타일 */
 .input-full {
     width: 90%;
     padding: 12px;
-    margin: 8px 0;
+    margin: 8px auto; /* ⭐️ [수정] 입력 필드 중앙 정렬 */
     border-radius: 4px;
     border: 1px solid #ccc;
     box-sizing: border-box;
     transition: border-color 0.2s;
+    display: block; /* 블록 요소로 변경 */
+}
+.input-full:focus {
+    border-color: #111;
+    outline: none;
 }
 
 /* 이미지 미리보기 크기 확대 및 중앙 정렬 */
@@ -134,7 +138,7 @@ h3, h4 {
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
 }
 
-/* 갤러리 네비게이션 버튼 (모바일 겹침 문제 해결) */
+/* 갤러리 네비게이션 버튼 (위치 수정 없음) */
 .gallery-nav {
     position: absolute;
     top: 25px;
@@ -143,7 +147,7 @@ h3, h4 {
 }
 @media (max-width: 600px) {
     .container {
-        padding-top: 60px; /* ⭐️ [추가] 모바일에서 제목과 갤러리 버튼 겹침 방지 */
+        padding-top: 60px;
     }
 }
 
@@ -156,17 +160,12 @@ h3, h4 {
     justify-content: center;
     margin-top: 20px;
 }
-.loading-gif {
-    width: 100px;
-    height: 100px;
-    object-fit: contain;
-    margin-bottom: 10px;
-}
-.loading-text {
-    color: #111;
-    font-style: italic;
-    font-weight: bold;
-    font-size: 1.1em;
+.qr-box {
+    margin: 15px auto; /* ⭐️ [수정] QR 코드 중앙 정렬 */
+    padding: 8px;
+    border: 2px solid #111;
+    display: inline-block;
+    background-color: white;
 }
 
 /* ... (나머지 스타일 유지) ... */

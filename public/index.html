@@ -13,6 +13,9 @@
 </head>
 <body>
 <div class="container">
+
+    <a href="gallery.html" class="btn gallery-nav-btn gallery-nav"><i class="fas fa-images"></i> GALLERY</a>
+
     <h1>AI STUDIO <i class="fas fa-paint-brush"></i></h1>
 
     <div class="card step-card">
@@ -96,7 +99,7 @@
     const cancelQrButton = document.getElementById('cancelQrButton');
     const qrOriginalImage = document.getElementById('qrOriginalImage');
     const qrFileStatus = document.getElementById('qrFileStatus');
-    const loadingAnimation = document.getElementById('loadingAnimation'); // loadingAnimation 요소 가져오기
+    const loadingAnimation = document.getElementById('loadingAnimation');
 
     // --- 모드 전환 로직 ---
     document.querySelectorAll('.mode-btn').forEach(button => {
@@ -203,7 +206,7 @@
             return alert(`[${currentMode} Mode] Missing input.`);
         }
 
-        loadingAnimation.style.display = 'block'; // ⭐️ [수정] GIF 애니메이션 컨테이너 표시
+        loadingAnimation.style.display = 'block';
 
         try {
             const response = await fetch('/api/ai-process', { method: 'POST', body: formData });
@@ -225,7 +228,7 @@
             alert('Network error.');
             console.error("Fetch/System Error:", e);
         } finally {
-            loadingAnimation.style.display = 'none'; // ⭐️ [수정] GIF 애니메이션 컨테이너 숨김
+            loadingAnimation.style.display = 'none';
         }
     });
 
