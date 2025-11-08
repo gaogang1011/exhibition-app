@@ -5,11 +5,52 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>모바일 파일 업로드</title>
     <style>
-        body { font-family: sans-serif; text-align: center; padding: 20px; }
-        h1 { color: #007bff; }
-        .container { max-width: 400px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px; }
-        .btn-upload { display: block; width: 100%; padding: 10px; background-color: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer; margin-top: 20px; }
-        #fileInput { display: none; }
+        body {
+            font-family: sans-serif;
+            text-align: center;
+            padding: 20px;
+            background-color: #eef2f7; /* 배경색 통일 */
+        }
+        h1 {
+            color: #1a73e8;
+            font-size: 1.5em;
+            margin-bottom: 20px;
+        }
+        .container {
+            max-width: 400px;
+            width: 90%; /* 모바일에서 폭을 90%로 설정 */
+            margin: 40px auto; /* 중앙 정렬 */
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 12px;
+            background-color: white;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        .btn-upload {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 20px;
+            font-weight: bold;
+        }
+        .btn-submit {
+            background-color: #007bff;
+            margin-top: 15px;
+        }
+        #fileInput {
+            display: none;
+        }
+        #fileNameDisplay {
+            padding: 10px;
+            border: 1px dashed #ccc;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
@@ -23,7 +64,7 @@
         <label for="fileInput" class="btn-upload">사진 선택 (앨범/카메라)</label>
         <p id="fileNameDisplay" style="margin-top: 10px; color: #555;">선택된 파일 없음</p>
 
-        <button type="submit" class="btn-upload" style="background-color: #007bff;">업로드 시작</button>
+        <button type="submit" class="btn-upload btn-submit">업로드 시작</button>
     </form>
 </div>
 
