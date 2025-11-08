@@ -10,42 +10,9 @@
 
     <link rel="icon" href="/favicon.ico" type="image/x-icon">
     <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
-
-    <style>
-        /* [수정] 갤러리 버튼을 위한 스타일 (index.html 내부에 인라인 스타일로 추가) */
-        .gallery-nav {
-            /* 겹침 방지를 위해 절대 위치(absolute) 대신 flex나 margin 사용이 권장되지만,
-               현재 코드 구조상 absolute를 사용하되 위치를 안전하게 조정합니다. */
-            position: absolute;
-            top: 25px; /* 상단에서 25px */
-            right: 20px; /* 오른쪽에서 20px */
-            z-index: 1000; /* 다른 요소 위에 표시 */
-        }
-        .gallery-nav-btn {
-            background-color: transparent;
-            border: 2px solid #111;
-            padding: 8px 12px;
-            font-size: 0.9em;
-            font-weight: bold;
-        }
-        .gallery-nav-btn:hover {
-            background-color: #111;
-            color: white;
-        }
-
-        /* [추가] 모바일에서 제목(h1)과 버튼(gallery-nav)의 겹침을 방지하기 위한 안전 영역 확보 */
-        @media (max-width: 600px) {
-            .container {
-                padding-top: 60px; /* 겹치는 공간을 피하도록 컨테이너 상단에 패딩 추가 */
-            }
-        }
-    </style>
 </head>
 <body>
 <div class="container">
-
-    <a href="gallery.html" class="btn gallery-nav-btn gallery-nav"><i class="fas fa-images"></i> GALLERY</a>
-
     <h1>AI STUDIO <i class="fas fa-paint-brush"></i></h1>
 
     <div class="card step-card">
@@ -103,7 +70,11 @@
 
     <div class="card action-area">
         <button id="aiConvertButton" class="btn action-btn full-width">✨ GENERATE</button>
-        <p id="loadingStatus" class="status-text loading-text" style="display: none;">PROCESSING...</p>
+
+        <div id="loadingAnimation" class="loading-animation" style="display: none;">
+            <img src="brush_loading_bw.gif" alt="Processing..." class="loading-gif">
+            <p class="loading-text">PROCESSING...</p>
+        </div>
     </div>
 </div>
 
@@ -125,7 +96,9 @@
     const cancelQrButton = document.getElementById('cancelQrButton');
     const qrOriginalImage = document.getElementById('qrOriginalImage');
     const qrFileStatus = document.getElementById('qrFileStatus');
+    const loadingAnimation = document.getElementById('loadingAnimation'); // loadingAnimation 요소 가져오기
 
+    // --- 모드 전환 로직 ---
     document.querySelectorAll('.mode-btn').forEach(button => {
         button.addEventListener('click', () => {
             currentMode = button.dataset.mode;
@@ -140,6 +113,7 @@
         });
     });
 
+    // --- 1. PC 업로드 로직 ---
     uploadButton.addEventListener('click', () => fileUploader.click());
     fileUploader.addEventListener('change', (event) => {
         pcUploadedFile = event.target.files[0];
@@ -155,6 +129,7 @@
         reader.readAsDataURL(pcUploadedFile);
     });
 
+    // --- 3. QR 업로드 로직 ---
     qrUploadStartButton.addEventListener('click', startQrUploadSession);
     cancelQrButton.addEventListener('click', cancelQrUploadSession);
 
@@ -207,6 +182,7 @@
         qrUploadStartButton.style.display = 'inline-block';
     }
 
+    // --- AI 변환 버튼 클릭 시 (통합 로직) ---
     document.getElementById('aiConvertButton').addEventListener('click', async () => {
         let prompt = document.getElementById('textPromptInput').value;
         const style = document.getElementById('styleSelect').value;
@@ -227,8 +203,7 @@
             return alert(`[${currentMode} Mode] Missing input.`);
         }
 
-        const loadingStatus = document.getElementById('loadingStatus');
-        loadingStatus.style.display = 'block';
+        loadingAnimation.style.display = 'block'; // ⭐️ [수정] GIF 애니메이션 컨테이너 표시
 
         try {
             const response = await fetch('/api/ai-process', { method: 'POST', body: formData });
@@ -250,7 +225,7 @@
             alert('Network error.');
             console.error("Fetch/System Error:", e);
         } finally {
-            loadingStatus.style.display = 'none';
+            loadingAnimation.style.display = 'none'; // ⭐️ [수정] GIF 애니메이션 컨테이너 숨김
         }
     });
 
