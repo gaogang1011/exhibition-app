@@ -5,12 +5,11 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
-const sharp = require('sharp'); // 이미지 리사이징 라이브러리
+const sharp = require('sharp');
 
 const { OpenAI } = require('openai');
 const fetch = require('node-fetch');
 
-// [필수] OpenAI API 키를 환경 변수에서 가져옵니다.
 const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
 });
@@ -227,7 +226,6 @@ app.post('/api/ai-process', upload.single('pcImage'), async (req, res) => {
 
         const aiImageUrl = `/images/${finalFileName}`;
 
-        // ⭐️ [복구] index.html에서 download.html로 리디렉션할 때 사용할 파일 이름만 반환합니다.
         res.json({ aiImageUrl: aiImageUrl, filename: finalFileName });
 
     } catch (error) {
@@ -300,7 +298,6 @@ app.get('/api/download/:filename', async (req, res) => {
             res.setHeader('Content-Type', 'image/png');
             res.send(resizedBuffer);
         } else {
-            // 원본 파일 전송 (large 또는 size 미지정)
             res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
             res.setHeader('Content-Type', 'application/octet-stream');
             res.sendFile(filePath);

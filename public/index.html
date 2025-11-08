@@ -214,14 +214,14 @@
             if (!response.ok) {
                 const errorData = await response.json();
                 alert(errorData.error || 'Generation failed (Server Error)');
-                fullScreenLoading.style.display = 'none'; // 에러 시 로딩 닫기
+                fullScreenLoading.style.display = 'none';
                 return;
             }
 
             const data = await response.json();
 
             if (data.filename) {
-                // ⭐️ [복구] 파일 이름을 쿼리 파라미터로 포함하여 download.html로 리디렉션
+                // ⭐️ [복구] 로딩 후 download.html로 리디렉션
                 window.location.href = `download.html?file=${data.filename}`;
             } else {
                 alert('Result URL not received.');

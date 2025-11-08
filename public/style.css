@@ -110,10 +110,6 @@ h3, h4 {
     transition: border-color 0.2s;
     display: block;
 }
-.input-full:focus {
-    border-color: #111;
-    outline: none;
-}
 
 /* 이미지 미리보기 크기 확대 및 중앙 정렬 */
 .preview-img {
@@ -166,7 +162,7 @@ h3, h4 {
 }
 
 /* =====================================
-   전체 화면 로딩 오버레이 스타일
+   ⭐️ [수정 완료] 전체 화면 로딩 오버레이 스타일
    ===================================== */
 .full-screen-loading {
     position: fixed;
@@ -180,15 +176,16 @@ h3, h4 {
     justify-content: center;
     align-items: center;
     z-index: 9999;
-    /* Redirect 시에는 transition/animation 불필요 */
 }
 
-/* 로딩 GIF (전체 화면 버전) */
+/* ⭐️ [수정] GIF 이미지 크기를 화면에 비해 더 크게 확대 */
 .loading-gif-full {
-    width: 200px;
-    height: 200px;
+    width: 90%; /* 화면 너비에 거의 가깝게 확장 */
+    max-width: 400px; /* 너무 커지는 것 방지 */
+    height: auto;
     object-fit: contain;
     margin-bottom: 20px;
+    filter: invert(1); /* 흑백 GIF가 검은색 배경에서 잘 보이도록 필터 적용 */
 }
 
 /* 로딩 텍스트 (전체 화면 버전) */
