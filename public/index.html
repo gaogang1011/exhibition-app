@@ -12,11 +12,14 @@
     <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
 
     <style>
-        /* [추가] 갤러리 버튼을 위한 스타일 */
+        /* [수정] 갤러리 버튼을 위한 스타일 (index.html 내부에 인라인 스타일로 추가) */
         .gallery-nav {
+            /* 겹침 방지를 위해 절대 위치(absolute) 대신 flex나 margin 사용이 권장되지만,
+               현재 코드 구조상 absolute를 사용하되 위치를 안전하게 조정합니다. */
             position: absolute;
-            top: 25px;
-            right: 25px;
+            top: 25px; /* 상단에서 25px */
+            right: 20px; /* 오른쪽에서 20px */
+            z-index: 1000; /* 다른 요소 위에 표시 */
         }
         .gallery-nav-btn {
             background-color: transparent;
@@ -28,6 +31,13 @@
         .gallery-nav-btn:hover {
             background-color: #111;
             color: white;
+        }
+
+        /* [추가] 모바일에서 제목(h1)과 버튼(gallery-nav)의 겹침을 방지하기 위한 안전 영역 확보 */
+        @media (max-width: 600px) {
+            .container {
+                padding-top: 60px; /* 겹치는 공간을 피하도록 컨테이너 상단에 패딩 추가 */
+            }
         }
     </style>
 </head>
