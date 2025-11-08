@@ -48,13 +48,30 @@ app.use(express.json());
 
 // ===================================================
 // 보조 함수: 이미지를 Base64로 인코딩 (Vision API 사용을 위해 필요)
+// [수정] 파일 타입 검사 및 MIME Type 반환 로직 포함
 // ===================================================
 function imageToBase64(filePath) {
     if (!fs.existsSync(filePath)) {
         throw new Error(`파일을 찾을 수 없습니다: ${filePath}`);
     }
+
+    const ext = path.extname(filePath).toLowerCase();
+    const mimeType = {
+        '.png': 'image/png',
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg',
+    }[ext];
+
+    if (!mimeType) {
+        throw new Error(`지원하지 않는 파일 형식입니다: ${ext}`);
+    }
+
     try {
-        return fs.readFileSync(filePath).toString('base64');
+        const fileBuffer = fs.readFileSync(filePath);
+        return {
+            base64: fileBuffer.toString('base64'),
+            mimeType: mimeType
+        };
     } catch (e) {
         console.error(`Base64 인코딩 중 오류 발생: ${filePath}`, e);
         throw new Error(`파일을 Base64로 인코딩할 수 없습니다: ${filePath}`);
@@ -62,7 +79,7 @@ function imageToBase64(filePath) {
 }
 
 // ===================================================
-// PC-모바일 브리지 API (유지)
+// PC-모바일 브리지 API
 // ===================================================
 
 app.get('/api/start-upload-session', (req, res) => {
@@ -132,21 +149,19 @@ app.post('/api/ai-process', upload.single('pcImage'), async (req, res) => {
             return res.status(400).json({ error: '필수 입력 데이터가 부족하거나 모드가 일치하지 않습니다.' });
         }
 
-        // --- [핵심 수정: GPT-4o Vision을 통한 이미지 분석] ---
+        // --- GPT-4o Vision을 사용한 이미지 분석 ---
         if ((mode === 'image' || mode === 'qr') && inputImagePath) {
 
-            const base64Image = imageToBase64(inputImagePath);
+            const { base64, mimeType } = imageToBase64(inputImagePath); // Base64와 MIME Type 획득
 
-            // 1. GPT-4o Vision API 호출 (플랫폼 방식: 변환에 필요한 상세 묘사 요청)
+            // 1. GPT-4o Vision API 호출
             const visionResponse = await openai.chat.completions.create({
                 model: "gpt-4o",
                 messages: [
                     {
                         role: "system",
-                        // [강화된 지침] 이미지의 구조, 구도, 색상, 개체를 상세히 묘사하되,
-                        // 사람일 경우 'character' 또는 'figure'로 묘사하고,
-                        // 이후의 DALL-E 생성을 위한 원본 프롬프트로만 사용하라고 지시.
-                        content: "You are an expert AI image describer specialized in creating base prompts for DALL-E. Analyze the visual elements of the photo (main subject, pose, lighting, colors, background structure). The output MUST be a single, detailed English sentence, optimizing for image structure and composition retention. Do not add any stylistic terms (like 'high-quality' or 'oil painting'). If the subject is a person, describe them only as a 'humanoid figure' or 'character' and avoid specific identifiers or demographics.",
+                        // [최종 수정] 정책 위반을 피하기 위해 사람을 'figure'로 묘사하고, DALL-E 생성을 위한 원본 프롬프트로만 사용하도록 지시.
+                        content: "You are an expert AI image describer specialized in creating base prompts for DALL-E. Analyze the visual elements of the photo (main subject, pose, lighting, colors, background structure). The output MUST be a single, detailed English sentence, optimizing for image structure and composition retention. Do not add any stylistic terms. If the subject is a person, describe them only as a 'humanoid figure' or 'character' and avoid specific identifiers or demographics.",
                     },
                     {
                         role: "user",
@@ -155,7 +170,7 @@ app.post('/api/ai-process', upload.single('pcImage'), async (req, res) => {
                             {
                                 type: "image_url",
                                 image_url: {
-                                    url: `data:image/jpeg;base64,${base64Image}`,
+                                    url: `data:${mimeType};base64,${base64}`, // MIME Type 명시 (핵심 수정)
                                     detail: "high"
                                 },
                             },
@@ -167,14 +182,12 @@ app.post('/api/ai-process', upload.single('pcImage'), async (req, res) => {
 
             const visionDescription = visionResponse.choices[0].message.content.trim();
 
-            // 2. Vision 분석 결과와 사용자 프롬프트를 결합
+            // 2. Vision 분석 결과와 사용자 프롬프트를 결합 (Image-to-Image 시뮬레이션)
             basePrompt = `TRANSFORM this image structure: (${visionDescription}). User's style request: ${basePrompt}`;
-
         }
 
         // --- DALL-E 3 이미지 생성 ---
 
-        // 최종 프롬프트 구성 (DALL-E에 변환 요청임을 강조)
         let finalPrompt = `${basePrompt}. Convert it into ${style} style. Preserve the original composition and color palette as closely as possible. Highly detailed and professional quality.`;
         if (style === 'default' || !style) {
             finalPrompt = `${basePrompt}. Highly detailed and professional quality.`;
@@ -216,8 +229,6 @@ app.post('/api/ai-process', upload.single('pcImage'), async (req, res) => {
         // 정책 위반 에러 감지 및 사용자 친화적인 메시지 반환
         if (error.code === 'content_policy_violation' || (error.status === 400 && error.error && error.error.code === 'content_policy_violation')) {
             errorMessage = '⚠️ 콘텐츠 정책 위반: 입력하신 내용이나 분석된 이미지에 부적절한 내용이 포함되어 거부되었습니다. 원본 이미지나 프롬프트 내용을 확인해주세요.';
-        } else if (error.message.includes('Failed to download image from OpenAI URL')) {
-            errorMessage = 'AI 이미지를 다운로드하는 데 실패했습니다. 다시 시도해 주세요.';
         } else if (error.message.includes('파일을 찾을 수 없습니다') || error.message.includes('Base64로 인코딩할 수 없습니다')) {
             errorMessage = '원본 이미지 처리 중 오류가 발생했습니다. 유효한 이미지 파일을 업로드했는지 확인해주세요.';
         }
@@ -227,7 +238,7 @@ app.post('/api/ai-process', upload.single('pcImage'), async (req, res) => {
             details: error.message
         });
     }
-});
+} /* finally { ... } 제거하여 오류 추적 단순화 */);
 
 // ===================================================
 // 다운로드 강제 API (유지)
