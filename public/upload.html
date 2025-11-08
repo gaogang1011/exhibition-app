@@ -9,38 +9,38 @@
     <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
     <style>
         body {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            background-color: #f4f4f4;
-            margin: 0;
-            font-family: Arial, sans-serif;
-            color: #333;
+            /* style.css가 처리하도록 대부분 제거 */
+            display: flex; /* flex 유지 */
+            flex-direction: column; /* flex 유지 */
+            justify-content: center; /* flex 유지 */
+            align-items: center; /* flex 유지 */
+            min-height: 100vh; /* flex 유지 */
+            margin: 0; /* 기본 마진 제거 */
+            background-color: #f0f0f0; /* 배경색은 조금 더 밝게 유지 */
+            color: #333; /* 텍스트 색상 */
         }
         .upload-container {
-            background-color: white;
+            background-color: white; /* 흰색 배경 유지 */
             padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            border-radius: 8px; /* 조금 둥글게 */
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); /* 그림자 부드럽게 */
             text-align: center;
             max-width: 400px;
             width: 90%;
         }
         h1 {
-            color: #007bff;
+            color: #111; /* 제목색을 어둡게 */
             margin-bottom: 20px;
         }
         p {
             margin-bottom: 25px;
-            font-size: 1.1em;
+            font-size: 1em; /* 폰트 크기 조정 */
         }
         .file-input-wrapper {
             position: relative;
             overflow: hidden;
             display: inline-block;
-            background-color: #28a745;
+            background-color: #333; /* 버튼 배경을 어둡게 */
             color: white;
             padding: 12px 25px;
             border-radius: 5px;
@@ -49,7 +49,7 @@
             transition: background-color 0.3s ease;
         }
         .file-input-wrapper:hover {
-            background-color: #218838;
+            background-color: #555; /* 호버 시 약간 밝게 */
         }
         .file-input-wrapper input[type="file"] {
             font-size: 100px;
@@ -68,7 +68,7 @@
             margin-top: 30px;
         }
         .btn-submit {
-            background-color: #007bff;
+            background-color: #111; /* 제출 버튼 배경을 어둡게 */
             color: white;
             padding: 12px 30px;
             border: none;
@@ -78,7 +78,7 @@
             transition: background-color 0.3s ease;
         }
         .btn-submit:hover {
-            background-color: #0056b3;
+            background-color: #333; /* 호버 시 약간 밝게 */
         }
     </style>
 </head>
@@ -102,12 +102,12 @@
         const sessionId = urlParams.get('id');
         if (!sessionId) {
             alert('세션 ID가 없어 업로드를 진행할 수 없습니다.');
-            window.close(); // 세션 ID가 없으면 창 닫기
+            window.close();
             return;
         }
 
         const uploadForm = document.getElementById('uploadForm');
-        uploadForm.action = `/api/mobile-upload/${sessionId}`; // 세션 ID를 action에 추가
+        uploadForm.action = `/api/mobile-upload/${sessionId}`;
 
         const mobileImageUploader = document.getElementById('mobileImageUploader');
         const uploadFileName = document.getElementById('uploadFileName');
@@ -121,7 +121,7 @@
         });
 
         uploadForm.addEventListener('submit', async (e) => {
-            e.preventDefault(); // 기본 폼 제출 방지
+            e.preventDefault();
 
             const formData = new FormData(uploadForm);
             const response = await fetch(uploadForm.action, {
@@ -130,9 +130,8 @@
             });
 
             if (response.ok) {
-                // 서버 응답 (스크립트 태그 포함)을 직접 실행
                 const responseText = await response.text();
-                document.body.innerHTML = responseText; // 응답 HTML을 페이지에 렌더링
+                document.body.innerHTML = responseText;
             } else {
                 alert('파일 업로드 실패.');
                 console.error('Upload failed:', await response.text());
