@@ -147,7 +147,7 @@ h3, h4 {
     }
 }
 
-/* GIF 로딩 오버레이 스타일 (화면 확대) */
+/* GIF 로딩 오버레이 스타일 */
 .full-screen-loading {
     position: fixed;
     top: 0;
@@ -160,6 +160,8 @@ h3, h4 {
     justify-content: center;
     align-items: center;
     z-index: 9999;
+    /* ⭐️ [수정] 자식 GIF가 중앙에 오도록 margin을 해제 */
+    margin: 0;
 }
 
 /* GIF 이미지 크기 조정 */

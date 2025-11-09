@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Studio</title> <link rel="stylesheet" href="style.css">
+    <title>AI Studio</title>
+    <link rel="stylesheet" href="style.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 
@@ -101,9 +102,8 @@
 
     const fullScreenLoading = document.getElementById('fullScreenLoading');
 
-    // --- ⭐️ [추가] GIF 타이밍 상수 ---
-    const GIF_WHITE_FRAME_TIME_MS = 2500; // 약 2.5초 (실제 GIF에 맞춰 조정 필요)
-    const FINAL_WAIT_MS = 200; // 흰색 배경 표시 후 리디렉션까지 기다리는 시간
+    const GIF_WHITE_FRAME_TIME_MS = 2500;
+    const FINAL_WAIT_MS = 200;
 
     // --- 모드 전환, 업로드, QR 로직 (유지) ---
 
@@ -194,7 +194,7 @@
         const style = document.getElementById('styleSelect').value;
         const stylePrompt = document.getElementById('stylePromptInput').value;
 
-        // ⭐️ [Feature 2] 프롬프트 안전 필터링 로직
+        const formData = new FormData();
         const DANGER_KEYWORDS = ['sex', 'nude', 'violence', 'gun', 'weapon', 'gore', 'child abuse', 'explicit', 'hate speech', 'bloody'];
         const fullPrompt = prompt + (stylePrompt ? ', ' + stylePrompt : '');
         const lowerCasePrompt = fullPrompt.toLowerCase();
@@ -210,9 +210,7 @@
         if (safetyViolation) {
             return alert('⚠️ 콘텐츠 정책 위반 가능성이 있는 키워드(예: 폭력, 성적인 단어)가 감지되었습니다. 내용을 수정해주세요.');
         }
-        // 안전 필터링 로직 끝
 
-        const formData = new FormData();
         formData.append('prompt', fullPrompt);
         formData.append('style', style);
         formData.append('mode', currentMode);
@@ -269,11 +267,8 @@
         } catch(e) {
             alert(`Error: ${e.message || 'Network error or processing error.'}`);
             console.error("Fetch/System Error:", e);
-        } finally {
-            fullScreenLoading.style.display = 'none'; // 에러가 나거나 완료되면 닫음
-            // 배경색을 초기값으로 되돌림 (다음 사용을 위해)
-            document.getElementById('fullScreenLoading').style.backgroundColor = 'rgba(0, 0, 0, 0.95)';
-            document.querySelector('.loading-text-full').style.color = 'white';
+            // 에러 발생 시 로딩 화면 닫기
+            fullScreenLoading.style.display = 'none';
         }
     });
 
