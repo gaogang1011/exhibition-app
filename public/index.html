@@ -228,7 +228,12 @@
             return alert(`[${currentMode} Mode] Missing input.`);
         }
 
-        fullScreenLoading.style.display = 'flex'; // 전체 화면 로딩 표시
+        fullScreenLoading.style.display = 'flex'; // ⭐️ [START] 전체 화면 로딩 표시
+
+        // ⭐️ [UX FIX] 로딩 시작 시 바로 검은색으로 전환 (붓이 검은색을 칠하는 효과)
+        fullScreenLoading.style.backgroundColor = 'rgba(0, 0, 0, 0.95)';
+        document.querySelector('.loading-text-full').style.color = 'white';
+
 
         try {
             // 1. AI 응답을 기다리는 Promise
@@ -251,11 +256,11 @@
             // 4. GIF 타이밍 맞추기 및 리디렉션
             if (aiData.filename) {
 
-                // 배경색을 흰색으로 변경하고 텍스트 색상 변경
+                // ⭐️ [STEP 1: 흰색 붓칠 완료] 배경색을 흰색으로 변경하고 텍스트 색상 변경
                 fullScreenLoading.style.backgroundColor = 'white';
                 document.querySelector('.loading-text-full').style.color = 'black';
 
-                // 흰색 배경이 확실히 보인 후 리디렉션
+                // ⭐️ [STEP 2: 결과 페이지 드러냄] 흰색 배경이 확실히 보인 후 리디렉션
                 await new Promise(resolve => setTimeout(resolve, FINAL_WAIT_MS));
 
                 // ⭐️ [리디렉션] download.html로 이동
@@ -271,7 +276,7 @@
             alert(`Error: ${e.message || 'Network error or processing error.'}`);
             console.error("Fetch/System Error:", e);
         } finally {
-            // 에러가 나거나 완료되면 초기값으로 되돌림
+            // 에러가 나거나 완료 시 초기값으로 되돌림
             fullScreenLoading.style.display = 'none';
             fullScreenLoading.style.backgroundColor = 'rgba(0, 0, 0, 0.95)';
             document.querySelector('.loading-text-full').style.color = 'white';
