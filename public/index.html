@@ -12,7 +12,19 @@
     <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
 </head>
 <body>
-<div class="container">
+
+<div id="galleryLoadingScreen" class="gallery-loading-screen" style="display: none;">
+    <div class="gallery-track-container">
+        <div id="galleryTrack" class="gallery-track">
+        </div>
+    </div>
+    <div class="loading-overlay-text">
+        <p>PROCESSING</p>
+    </div>
+</div>
+
+
+<div class="container" id="mainContent">
 
     <a href="gallery.html" class="btn gallery-nav-btn gallery-nav"><i class="fas fa-images"></i> GALLERY</a>
 
@@ -76,10 +88,6 @@
     </div>
 </div>
 
-<div id="fullScreenLoading" class="full-screen-loading" style="display: none;">
-    <img src="brush_loading_bw.gif" alt="Processing..." class="loading-gif-full">
-    <p class="loading-text-full">PROCESSING...</p>
-</div>
 
 <script>
     // ⭐️ [복구된 전역 변수 초기화]
@@ -102,12 +110,8 @@
     const qrFileStatus = document.getElementById('qrFileStatus');
 
     const galleryLoadingScreen = document.getElementById('galleryLoadingScreen');
-    const loadingGif = document.querySelector('.loading-gif-full');
-    const loadingText = document.querySelector('.loading-text-full');
-
-    const GIF_WHITE_FRAME_TIME_MS = 2500;
-    const FINAL_WAIT_MS = 150;
-
+    const galleryTrack = document.getElementById('galleryTrack');
+    // loadingGif와 loadingText는 현재 사용되지 않으므로 제거합니다. (fullScreenLoadingDiv 안의 내용)
 
     // --- 갤러리 이미지 로드 (유지) ---
     async function loadGalleryImages() {
@@ -116,8 +120,13 @@
             const data = await response.json();
 
             if (data.images && data.images.length > 0) {
-                const galleryTrack = document.getElementById('galleryTrack');
-                galleryTrack.innerHTML = '';
+                // 갤러리 트랙이 없는 경우를 대비하여 추가
+                const galleryTrackElement = document.getElementById('galleryTrack');
+                if (!galleryTrackElement) {
+                    console.error("galleryTrack element not found!");
+                    return;
+                }
+                galleryTrackElement.innerHTML = '';
 
                 const imagesToDisplay = data.images.slice(0, 8);
 
@@ -126,11 +135,14 @@
                         const img = document.createElement('img');
                         img.src = item.url;
                         img.className = 'gallery-loading-item';
-                        galleryTrack.appendChild(img);
+                        galleryTrackElement.appendChild(img);
                     });
                 }
             } else {
-                document.getElementById('galleryTrack').innerHTML = '<p class="error-text">No images in gallery to display.</p>';
+                const galleryTrackElement = document.getElementById('galleryTrack');
+                if (galleryTrackElement) {
+                    galleryTrackElement.innerHTML = '<p class="error-text">No images in gallery to display.</p>';
+                }
             }
         } catch (e) {
             console.error("Failed to load gallery images for loading screen:", e);
@@ -139,8 +151,7 @@
 
     loadGalleryImages();
 
-    // --- 모드 전환, 업로드, QR 로직 (유지) ---
-
+    // --- 모드 전환 로직 (유지) ---
     document.querySelectorAll('.mode-btn').forEach(button => {
         button.addEventListener('click', () => {
             currentMode = button.dataset.mode;
@@ -149,29 +160,35 @@
             document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
             button.classList.add('active');
 
+            // QR 관련 타이머 및 UI 정리
             if (pollingInterval) clearInterval(pollingInterval);
             qrBridgeArea.style.display = 'none';
             qrUploadStartButton.style.display = 'inline-block';
         });
     });
 
-    // ⭐️ [복구] PC 파일 선택 버튼 이벤트 리스너
+    // --- PC 파일 업로드 로직 (유지) ---
     uploadButton.addEventListener('click', () => fileUploader.click());
     fileUploader.addEventListener('change', (event) => {
         pcUploadedFile = event.target.files[0];
-        qrUploadedFileName = null;
+        qrUploadedFileName = null; // QR 업로드 파일 초기화
 
         const reader = new FileReader();
         reader.onload = (e) => {
             originalImage.src = e.target.result;
             originalImage.style.display = 'block';
             fileStatus.textContent = `File: ${pcUploadedFile.name}`;
-            qrOriginalImage.style.display = 'none';
+            qrOriginalImage.style.display = 'none'; // QR 이미지 미리보기 숨김
         };
-        reader.readAsDataURL(pcUploadedFile);
+        if (pcUploadedFile) {
+            reader.readAsDataURL(pcUploadedFile);
+        } else {
+            originalImage.style.display = 'none';
+            fileStatus.textContent = '';
+        }
     });
 
-    // ⭐️ [복구] QR 시작 버튼 이벤트 리스너
+    // --- QR 업로드 로직 (유지) ---
     qrUploadStartButton.addEventListener('click', startQrUploadSession);
     cancelQrButton.addEventListener('click', cancelQrUploadSession);
 
@@ -205,7 +222,7 @@
             currentSessionId = null;
 
             qrUploadedFileName = data.fileInfo.fileName;
-            pcUploadedFile = null;
+            pcUploadedFile = null; // PC 업로드 파일 초기화
 
             qrOriginalImage.src = `/images/uploads/${qrUploadedFileName}`;
             qrOriginalImage.style.display = 'block';
@@ -224,7 +241,7 @@
         qrUploadStartButton.style.display = 'inline-block';
     }
 
-    // --- AI 변환 버튼 클릭 시 (핵심 로직: 부드러운 전환) ---
+    // --- AI 변환 버튼 클릭 시 (핵심 로직: 부드러운 전환 및 기능 복구) ---
     document.getElementById('aiConvertButton').addEventListener('click', async () => {
         let prompt = document.getElementById('textPromptInput').value;
         const style = document.getElementById('styleSelect').value;
@@ -316,6 +333,7 @@
         }
     });
 
+    // 페이지 로드 시 기본 모드 설정
     document.querySelector('.mode-btn[data-mode="image"]').click();
 </script>
 </body>
