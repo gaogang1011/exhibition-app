@@ -148,7 +148,7 @@ h3, h4 {
 }
 
 /* =====================================
-   ⭐️ [수정] 롤링 배너 로딩 스타일 (부드러운 전환 및 애니메이션)
+   롤링 배너 로딩 스타일 (부드러운 전환 및 애니메이션)
    ===================================== */
 @keyframes dots {
     0% { content: "."; }
@@ -176,7 +176,7 @@ h3, h4 {
     overflow: hidden;
 
     /* ⭐️ [핵심] 부드러운 전환을 위한 opacity 트랜지션 추가 */
-    transition: opacity 0.3s ease-in-out;
+    transition: opacity 0.5s ease-in-out;
     opacity: 0;
     visibility: hidden;
 }

@@ -48,7 +48,7 @@ app.use(express.static(PUBLIC_PATH));
 app.use(express.json());
 
 // ===================================================
-// 보조 함수: 이미지를 Base64로 인코딩 (유지)
+// 보조 함수: 이미지를 Base64로 인코딩
 // ===================================================
 function imageToBase64(filePath) {
     if (!fs.existsSync(filePath)) {
@@ -79,7 +79,7 @@ function imageToBase64(filePath) {
 }
 
 // ===================================================
-// PC-모바일 브리지 API (유지)
+// PC-모바일 브리지 API
 // ===================================================
 
 app.get('/api/start-upload-session', (req, res) => {
@@ -159,7 +159,7 @@ app.post('/api/ai-process', upload.single('pcImage'), async (req, res) => {
                 messages: [
                     {
                         role: "system",
-                        // ⭐️ 한국어 분석 유지
+                        // ⭐️ 한국어 분석 요청 유지
                         content: "You are an expert AI image analyzer. Describe the visual elements of the photo (main subject, pose, lighting, colors, background structure). The output MUST be a single, detailed Korean text prompt (under 100 words), optimizing for image structure and composition retention. Do NOT add any stylistic terms. If the subject is a person, describe them only as a 'humanoid figure' or 'character' and avoid specific identifiers or demographics. Respond only in Korean.",
                     },
                     {
@@ -197,7 +197,6 @@ app.post('/api/ai-process', upload.single('pcImage'), async (req, res) => {
                 `Maintain the subject's pose, the overall composition, and the color scheme. ` +
                 `Style: ${style}. User refinement: ${basePrompt}. Highly detailed, photorealistic quality.`;
         } else {
-            // 텍스트 모드
             finalPrompt = `${basePrompt} in ${style} style. Highly detailed and cinematic quality.`;
         }
 
@@ -227,7 +226,6 @@ app.post('/api/ai-process', upload.single('pcImage'), async (req, res) => {
 
         const aiImageUrl = `/images/${finalFileName}`;
 
-        // ⭐️ [응답] visionDescription와 mode를 응답에 포함
         const responseData = {
             aiImageUrl: aiImageUrl,
             filename: finalFileName,
@@ -258,7 +256,7 @@ app.post('/api/ai-process', upload.single('pcImage'), async (req, res) => {
 });
 
 // ===================================================
-// 갤러리 및 다운로드 API (유지)
+// 갤러리 및 다운로드 API
 // ===================================================
 app.get('/api/gallery-list', (req, res) => {
     try {
