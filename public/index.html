@@ -104,10 +104,7 @@
     const loadingGif = document.querySelector('.loading-gif-full'); // GIF 이미지 요소
     const loadingText = document.querySelector('.loading-text-full'); // 텍스트 요소
 
-    // ⭐️ GIF 타이밍 상수 (정확히 측정하고 조정해야 합니다.)
-    const GIF_WHITE_FRAME_TIME_MS = 2500;
-    const FINAL_WAIT_MS = 200;
-    const FADE_IN_TIME_MS = 300; // 검은색으로 덮는 시간
+    // --- GIF 타이밍 상수는 이제 사용하지 않음 ---
 
     // --- 모드 전환, 업로드, QR 로직 (유지) ---
 
@@ -192,13 +189,13 @@
         qrUploadStartButton.style.display = 'inline-block';
     }
 
-    // --- AI 변환 버튼 클릭 시 (핵심 로직: GIF 타이밍) ---
+    // --- AI 변환 버튼 클릭 시 (핵심 로직: 버벅거림 제거 및 즉시 리디렉션) ---
     document.getElementById('aiConvertButton').addEventListener('click', async () => {
         let prompt = document.getElementById('textPromptInput').value;
         const style = document.getElementById('styleSelect').value;
         const stylePrompt = document.getElementById('stylePromptInput').value;
 
-        // ... (안전 필터링 로직 유지) ...
+        // --- 안전 필터링 로직 ---
         const DANGER_KEYWORDS = ['sex', 'nude', 'violence', 'gun', 'weapon', 'gore', 'child abuse', 'explicit', 'hate speech', 'bloody'];
         const fullPrompt = prompt + (stylePrompt ? ', ' + stylePrompt : '');
         const lowerCasePrompt = fullPrompt.toLowerCase();
@@ -209,8 +206,9 @@
                 break;
             }
         }
+
         if (safetyViolation) {
-            return alert('⚠️ 콘텐츠 정책 위반 가능성이 있는 키워드가 감지되었습니다.');
+            return alert('⚠️ 콘텐츠 정책 위반 가능성이 있는 키워드가 감지되었습니다. 내용을 수정해주세요.');
         }
         // 안전 필터링 로직 끝
 
@@ -218,71 +216,60 @@
         formData.append('prompt', fullPrompt);
         formData.append('style', style);
         formData.append('mode', currentMode);
-        // ... (FormData 구성 로직 유지) ...
 
+        if (currentMode === 'image' && pcUploadedFile) {
+            formData.append('pcImage', pcUploadedFile);
+        } else if (currentMode === 'qr' && qrUploadedFileName) {
+            formData.append('qrUploadedFileName', qrUploadedFileName);
+        } else if (currentMode === 'text' && prompt) {
+            // Text to Image: 파일 필요 없음
+        } else {
+            return alert(`[${currentMode} Mode] Missing input.`);
+        }
 
         // ⭐️ [STAGE 1: 검은색 붓칠 시작]
         fullScreenLoading.style.display = 'flex';
-        // opacity를 1로 부드럽게 올림 (CSS transition: 0.3s)
-        setTimeout(() => {
-            fullScreenLoading.classList.add('active');
-        }, 10);
-
-        // ⭐️ [STAGE 2: GIF 로딩 시작] 검은색 화면이 완전히 나타난 후 GIF 표시
-        await new Promise(resolve => setTimeout(resolve, FADE_IN_TIME_MS + 50));
+        fullScreenLoading.classList.add('active'); // CSS 트랜지션을 통해 부드럽게 검은색으로 덮음
         loadingGif.style.opacity = 1; // GIF를 표시
 
         try {
-            // 1. AI 응답을 기다리는 Promise
-            const aiPromise = fetch('/api/ai-process', { method: 'POST', body: formData })
-                .then(response => {
-                    if (!response.ok) {
-                        return response.json().then(errorData => {
-                            throw new Error(errorData.error || 'Generation failed (Server Error)');
-                        });
-                    }
-                    return response.json();
-                });
+            // AI 응답 대기 (버벅거림의 원인인 Promise.all 제거)
+            const response = await fetch('/api/ai-process', { method: 'POST', body: formData });
 
-            // 2. GIF 흰색 프레임 대기 Promise
-            const gifPromise = new Promise(resolve => setTimeout(resolve, GIF_WHITE_FRAME_TIME_MS));
+            if (!response.ok) {
+                const errorData = await response.json();
+                alert(errorData.error || 'Generation failed (Server Error)');
+                return;
+            }
 
-            // 3. 두 Promise 모두 완료될 때까지 대기
-            const [aiData] = await Promise.all([aiPromise, gifPromise]);
+            const data = await response.json();
 
-            // 4. ⭐️ [STAGE 3 & 4: 흰색 붓으로 그리기 및 리디렉션]
-            if (aiData.filename) {
-
-                // a) 배경을 흰색으로 변경하고 텍스트 색상 변경 (흰색 붓칠 효과)
+            if (data.filename) {
+                // ⭐️ [STAGE 2: 즉시 흰색으로 전환 후 리디렉션]
+                // 배경색을 흰색으로 변경
                 fullScreenLoading.style.backgroundColor = 'white';
-                loadingText.style.color = 'black';
-                loadingGif.style.filter = 'none'; // GIF 필터 해제 (GIF가 검은색에서 흰색으로 전환되는 순간의 색상을 유지)
+                document.querySelector('.loading-text-full').style.color = 'black';
 
-                // b) 흰색 배경이 확실히 보인 후 리디렉션
-                await new Promise(resolve => setTimeout(resolve, FINAL_WAIT_MS));
-
-                // c) download.html로 이동
-                let redirectUrl = `download.html?file=${aiData.filename}&mode=${aiData.mode}`;
-                if (aiData.visionDescription) {
-                    redirectUrl += `&desc=${encodeURIComponent(aiData.visionDescription)}`;
+                // ⭐️ [핵심] GIF 타이밍 대기 없이 바로 리디렉션하여 버벅거림 제거
+                let redirectUrl = `download.html?file=${data.filename}&mode=${data.mode}`;
+                if (data.visionDescription) {
+                    redirectUrl += `&desc=${encodeURIComponent(data.visionDescription)}`;
                 }
                 window.location.href = redirectUrl;
+
             } else {
                 alert('Result URL not received.');
             }
         } catch(e) {
             alert(`Error: ${e.message || 'Network error or processing error.'}`);
             console.error("Fetch/System Error:", e);
-            fullScreenLoading.style.display = 'none';
-            fullScreenLoading.classList.remove('active');
-            loadingGif.style.opacity = 0;
         } finally {
-            // 에러가 나거나 완료 시 초기값으로 되돌림
+            // 에러가 나거나 완료 시 초기값으로 되돌림 (리디렉션 후에는 이 부분이 실행되지 않음)
             fullScreenLoading.style.display = 'none';
             fullScreenLoading.classList.remove('active');
             loadingGif.style.opacity = 0;
             fullScreenLoading.style.backgroundColor = 'rgba(0, 0, 0, 0.95)';
-            loadingText.style.color = 'white';
+            document.querySelector('.loading-text-full').style.color = 'white';
         }
     });
 
