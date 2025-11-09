@@ -3,141 +3,159 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>UPLOAD IMAGE</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="icon" href="/favicon.ico" type="image/x-icon">
-    <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+    <title>모바일 파일 업로드</title>
     <style>
         body {
-            /* style.css가 처리하도록 대부분 제거 */
-            display: flex; /* flex 유지 */
-            flex-direction: column; /* flex 유지 */
-            justify-content: center; /* flex 유지 */
-            align-items: center; /* flex 유지 */
-            min-height: 100vh; /* flex 유지 */
-            margin: 0; /* 기본 마진 제거 */
-            background-color: #f0f0f0; /* 배경색은 조금 더 밝게 유지 */
-            color: #333; /* 텍스트 색상 */
-        }
-        .upload-container {
-            background-color: white; /* 흰색 배경 유지 */
-            padding: 30px;
-            border-radius: 8px; /* 조금 둥글게 */
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); /* 그림자 부드럽게 */
+            font-family: 'Helvetica Neue', Arial, sans-serif;
             text-align: center;
-            max-width: 400px;
-            width: 90%;
+            padding: 20px;
+            background-color: #f7f7f7;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
         }
         h1 {
-            color: #111; /* 제목색을 어둡게 */
-            margin-bottom: 20px;
-        }
-        p {
+            color: #111;
+            font-size: 1.8em;
             margin-bottom: 25px;
-            font-size: 1em; /* 폰트 크기 조정 */
+            font-weight: 700;
         }
-        .file-input-wrapper {
-            position: relative;
-            overflow: hidden;
-            display: inline-block;
-            background-color: #333; /* 버튼 배경을 어둡게 */
-            color: white;
-            padding: 12px 25px;
-            border-radius: 5px;
-            cursor: pointer;
+        .container {
+            max-width: 90%;
+            width: 400px;
+            margin: auto;
+            padding: 30px 25px;
+            border-radius: 12px;
+            background-color: white;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+            border: 1px solid #ddd;
+        }
+
+        /* 세션 ID 표시 */
+        #sessionIdDisplay {
             font-size: 1.1em;
-            transition: background-color 0.3s ease;
-        }
-        .file-input-wrapper:hover {
-            background-color: #555; /* 호버 시 약간 밝게 */
-        }
-        .file-input-wrapper input[type="file"] {
-            font-size: 100px;
-            position: absolute;
-            left: 0;
-            top: 0;
-            opacity: 0;
-            cursor: pointer;
-        }
-        #uploadFileName {
-            margin-top: 20px;
-            font-weight: bold;
             color: #555;
+            margin-bottom: 20px;
+            padding: 5px;
+            border-bottom: 1px solid #eee;
         }
-        #uploadForm {
-            margin-top: 30px;
-        }
-        .btn-submit {
-            background-color: #111; /* 제출 버튼 배경을 어둡게 */
-            color: white;
-            padding: 12px 30px;
-            border: none;
-            border-radius: 5px;
-            font-size: 1.1em;
+
+        /* 버튼 공통 스타일 */
+        .btn-upload {
+            display: block;
+            width: 100%;
+            padding: 15px 0; /* 버튼 높이 조정 */
+            border: 1px solid #111;
+            border-radius: 6px;
             cursor: pointer;
-            transition: background-color 0.3s ease;
+            margin-top: 18px; /* 마진 조정 */
+            font-weight: bold;
+            font-size: 1.1em;
+            transition: all 0.2s;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        /* 사진 선택 버튼 (화이트/블랙 텍스트) */
+        .btn-select {
+            background-color: white;
+            color: #111;
+        }
+        .btn-select:hover {
+            background-color: #eee;
+        }
+
+        /* 업로드 시작 버튼 (블랙/화이트 텍스트) */
+        .btn-submit {
+            background-color: #111;
+            color: white;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
         }
         .btn-submit:hover {
-            background-color: #333; /* 호버 시 약간 밝게 */
+            background-color: #333;
+        }
+
+        /* 선택된 파일 표시 영역 스타일 */
+        #fileNameDisplay {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            border: 1px dashed #ccc;
+            border-radius: 6px;
+            margin: 15px 0 20px 0; /* 상하 마진 조정 */
+            color: #555;
+            background-color: #fafafa;
+            box-sizing: border-box;
+        }
+
+        #fileInput {
+            display: none;
         }
     </style>
 </head>
 <body>
-<div class="upload-container">
-    <h1>모바일 이미지 업로드</h1>
-    <p>PC 화면의 QR 코드를 스캔하여 연결되었습니다.</p>
-    <form id="uploadForm" method="post" enctype="multipart/form-data">
-        <div class="file-input-wrapper">
-            사진 선택
-            <input type="file" name="mobileImage" id="mobileImageUploader" accept="image/*" required>
-        </div>
-        <p id="uploadFileName">선택된 파일 없음</p>
-        <button type="submit" class="btn-submit">업로드</button>
+<div class="container">
+    <h1>📸 SEND PHOTO TO PC</h1>
+    <p id="sessionIdDisplay"></p>
+
+    <form id="mobileUploadForm" enctype="multipart/form-data">
+        <input type="file" name="mobileImage" id="fileInput" accept="image/*" required>
+
+        <label for="fileInput" class="btn-upload btn-select">Select Photo (Album/Camera)</label>
+        <p id="fileNameDisplay">No file selected</p>
+
+        <button type="submit" class="btn-upload btn-submit">START UPLOAD</button>
     </form>
 </div>
 
 <script>
-    document.addEventListener('DOMContentLoaded', () => {
-        const urlParams = new URLSearchParams(window.location.search);
-        const sessionId = urlParams.get('id');
-        if (!sessionId) {
-            alert('세션 ID가 없어 업로드를 진행할 수 없습니다.');
-            window.close();
-            return;
-        }
+    const urlParams = new URLSearchParams(window.location.search);
+    const sessionId = urlParams.get('id');
 
-        const uploadForm = document.getElementById('uploadForm');
-        uploadForm.action = `/api/mobile-upload/${sessionId}`;
+    const form = document.getElementById('mobileUploadForm');
 
-        const mobileImageUploader = document.getElementById('mobileImageUploader');
-        const uploadFileName = document.getElementById('uploadFileName');
+    if (!sessionId) {
+        document.body.innerHTML = '<h1>Error</h1><p>Invalid QR Code or session expired.</p>';
+    } else {
+        document.getElementById('sessionIdDisplay').textContent = `Session ID: ${sessionId.substring(0, 8)}...`;
 
-        mobileImageUploader.addEventListener('change', (event) => {
-            if (event.target.files.length > 0) {
-                uploadFileName.textContent = event.target.files[0].name;
+        const fileInput = document.getElementById('fileInput');
+        const fileNameDisplay = document.getElementById('fileNameDisplay');
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                fileNameDisplay.textContent = `File: ${e.target.files[0].name}`;
             } else {
-                uploadFileName.textContent = '선택된 파일 없음';
+                fileNameDisplay.textContent = 'No file selected';
             }
         });
 
-        uploadForm.addEventListener('submit', async (e) => {
+        form.addEventListener('submit', async (e) => {
             e.preventDefault();
+            const formData = new FormData(form);
 
-            const formData = new FormData(uploadForm);
-            const response = await fetch(uploadForm.action, {
-                method: 'POST',
-                body: formData,
-            });
+            try {
+                const response = await fetch(`/api/mobile-upload/${sessionId}`, {
+                    method: 'POST',
+                    body: formData
+                });
 
-            if (response.ok) {
-                const responseText = await response.text();
-                document.body.innerHTML = responseText;
-            } else {
-                alert('파일 업로드 실패.');
-                console.error('Upload failed:', await response.text());
+                if (response.ok) {
+                    const responseText = await response.text();
+                    document.body.innerHTML = responseText;
+                    // ⭐️ [선택 사항 해결] 업로드 성공 후 창 닫기 시도
+                    alert('파일 업로드 성공! PC 화면을 확인해주세요.');
+                    window.close(); // 브라우저가 허용하는 경우 창을 닫음
+
+                } else {
+                    alert(`Upload failed: ${response.statusText}`);
+                }
+            } catch (error) {
+                alert('Network error during upload.');
             }
         });
-    });
+    }
 </script>
 </body>
 </html>
