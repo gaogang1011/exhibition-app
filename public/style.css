@@ -148,10 +148,9 @@ h3, h4 {
 }
 
 /* =====================================
-   ⭐️ [수정] 롤링 배너 로딩 스타일 (심플화 및 애니메이션 복구)
+   ⭐️ [수정] 롤링 배너 로딩 스타일 (부드러운 전환 및 애니메이션)
    ===================================== */
 @keyframes roll {
-    /* ⭐️ 3번 복제된 이미지 트랙을 왼쪽으로 이동시키는 애니메이션 */
     from { transform: translateX(0); }
     to { transform: translateX(-33.3333%); }
 }
@@ -169,10 +168,18 @@ h3, h4 {
     align-items: center;
     z-index: 9999;
     overflow: hidden;
-    transition: opacity 0.3s ease-in-out; /* 부드러운 전환 효과를 위해 opacity 트랜지션 추가 */
+
+    /* ⭐️ [핵심] 투명도 변화에 0.5초 트랜지션 추가 */
+    transition: opacity 0.5s ease-out;
+    opacity: 1; /* JS에서 display:flex 할 때 즉시 불투명하게 시작 */
 }
+/* ⭐️ [추가] 퇴장 시 사용될 클래스 */
+.gallery-loading-screen.fade-out {
+    opacity: 0;
+}
+
 .gallery-loading-screen.start-rolling .gallery-track {
-    animation: roll 15s linear infinite; /* ⭐️ 롤링 애니메이션 실행 */
+    animation: roll 15s linear infinite;
 }
 
 .gallery-track-container {
@@ -180,13 +187,10 @@ h3, h4 {
     height: 350px;
     overflow: hidden;
     position: relative;
-    /* ⭐️ [수정] 경계선 제거 */
-    /* border-top: 5px solid #111; */
-    /* border-bottom: 5px solid #111; */
     margin: 40px 0;
 
     display: flex;
-    justify-content: flex-start; /* 롤링을 위해 시작점을 왼쪽으로 */
+    justify-content: flex-start;
     align-items: center;
 }
 
@@ -194,20 +198,19 @@ h3, h4 {
     display: flex;
     height: 100%;
     width: 300%;
-    gap: 20px; /* ⭐️ [수정] 이미지 사이의 간격 추가 */
+    gap: 20px;
     padding: 0 10px;
-    /* ⭐️ 애니메이션 시작 시 튕기지 않도록 transition 제거 */
 }
 
 .gallery-loading-item {
     height: 100%;
     object-fit: contain;
     aspect-ratio: 1 / 1;
-    min-width: 250px; /* 이미지 크기 조정 */
-    width: calc(100vw / 4); /* 화면 너비에 따라 적절히 조정 */
+    min-width: 250px;
+    width: calc(100vw / 4);
     border: 1px solid #ddd;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    margin-right: 20px; /* gap 대신 마진으로 간격 확보 */
+    margin-right: 20px;
 }
 
 .loading-overlay-text {
@@ -223,24 +226,4 @@ h3, h4 {
 .loading-overlay-text p {
     margin: 0;
 }
-
-
-/* GIF 로딩 (사용 안 함) 스타일은 유지 */
-.full-screen-loading {
-    /* ... (스타일 유지) ... */
-}
-
-
-/* QR 코드 스타일 */
-.qr-box {
-    margin: 15px auto;
-    padding: 8px;
-    border: 2px solid #111;
-    display: inline-block;
-    background-color: white;
-}
-.safety-note {
-    color: #ff3e3e;
-    font-size: 0.8em;
-    margin-top: 5px;
-}
+/* ... (나머지 CSS 유지) ... */

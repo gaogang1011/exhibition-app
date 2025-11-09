@@ -117,9 +117,9 @@
             if (data.images && data.images.length > 0) {
                 galleryTrack.innerHTML = '';
 
-                const imagesToDisplay = data.images.slice(0, 8); // 최대 8개 이미지만 사용
+                const imagesToDisplay = data.images.slice(0, 8);
 
-                // ⭐️ [복구] 이미지를 3번 복제하여 무한 롤링 효과 준비
+                // 이미지를 3번 복제하여 무한 롤링 효과 준비 (CSS 애니메이션을 위해 필요)
                 for (let i = 0; i < 3; i++) {
                     imagesToDisplay.forEach(item => {
                         const img = document.createElement('img');
@@ -157,7 +157,7 @@
     });
 
     uploadButton.addEventListener('click', () => fileUploader.click());
-    fileUploader.addEventListener('change', (event) => {
+    fileUploader.addEventListener('change', (event) => { /* ... (로직 유지) ... */
         pcUploadedFile = event.target.files[0];
         qrUploadedFileName = null;
 
@@ -174,7 +174,7 @@
     qrUploadStartButton.addEventListener('click', startQrUploadSession);
     cancelQrButton.addEventListener('click', cancelQrUploadSession);
 
-    async function startQrUploadSession() {
+    async function startQrUploadSession() { /* ... (로직 유지) ... */
         const response = await fetch('/api/start-upload-session');
         const data = await response.json();
         currentSessionId = data.sessionId;
@@ -194,7 +194,7 @@
         pollingInterval = setInterval(checkUploadStatus, 1000);
     }
 
-    async function checkUploadStatus() {
+    async function checkUploadStatus() { /* ... (로직 유지) ... */
         if (!currentSessionId) return;
         const response = await fetch(`/api/check-upload-status/${currentSessionId}`);
         const data = await response.json();
@@ -216,7 +216,7 @@
         }
     }
 
-    function cancelQrUploadSession() {
+    function cancelQrUploadSession() { /* ... (로직 유지) ... */
         if (pollingInterval) clearInterval(pollingInterval);
         currentSessionId = null;
         qrBridgeArea.style.display = 'none';
@@ -225,12 +225,11 @@
 
     // --- AI 변환 버튼 클릭 시 (핵심 로직) ---
     document.getElementById('aiConvertButton').addEventListener('click', async () => {
+        // ... (안전 필터링 로직 유지) ...
+        const DANGER_KEYWORDS = ['sex', 'nude', 'violence', 'gun', 'weapon', 'gore', 'child abuse', 'explicit', 'hate speech', 'bloody'];
         let prompt = document.getElementById('textPromptInput').value;
         const style = document.getElementById('styleSelect').value;
         const stylePrompt = document.getElementById('stylePromptInput').value;
-
-        // 안전 필터링 로직 (유지)
-        const DANGER_KEYWORDS = ['sex', 'nude', 'violence', 'gun', 'weapon', 'gore', 'child abuse', 'explicit', 'hate speech', 'bloody'];
         const fullPrompt = prompt + (stylePrompt ? ', ' + stylePrompt : '');
         const lowerCasePrompt = fullPrompt.toLowerCase();
         let safetyViolation = false;
@@ -243,7 +242,6 @@
         if (safetyViolation) {
             return alert('⚠️ 콘텐츠 정책 위반 가능성이 있는 키워드가 감지되었습니다. 내용을 수정해주세요.');
         }
-        // 안전 필터링 로직 끝
 
         const formData = new FormData();
         formData.append('prompt', fullPrompt);
@@ -262,10 +260,10 @@
 
         // ⭐️ [STAGE 1: 롤링 배너 시작]
         galleryLoadingScreen.style.display = 'flex';
-        galleryLoadingScreen.classList.add('start-rolling'); // CSS 애니메이션 시작
+        galleryLoadingScreen.classList.add('start-rolling');
 
         try {
-            // AI 응답을 기다리는 Promise
+            // AI 응답 대기
             const response = await fetch('/api/ai-process', { method: 'POST', body: formData });
 
             if (!response.ok) {
@@ -278,10 +276,16 @@
 
             if (data.filename) {
 
-                // ⭐️ [STAGE 2: AI 완료 후 롤링 중지 및 리디렉션]
-                galleryLoadingScreen.classList.remove('start-rolling'); // 롤링 중지
+                // ⭐️ [STAGE 2: 롤링 중단 및 리디렉션 시작]
+                galleryLoadingScreen.classList.remove('start-rolling'); // 롤링 중지 (움직임 멈춤)
 
-                // download.html로 이동 (버벅거림 방지를 위해 짧은 지연 없이 바로 리디렉션)
+                // ⭐️ [핵심] Opacity를 0으로 부드럽게 전환 (0.5s CSS transition 사용)
+                galleryLoadingScreen.style.opacity = 0;
+
+                // Opacity 전환 시간(0.5초)만큼 기다린 후 리디렉션하여 버벅거림 제거
+                await new Promise(resolve => setTimeout(resolve, 550));
+
+                // download.html로 이동
                 let redirectUrl = `download.html?file=${data.filename}&mode=${data.mode}`;
                 if (data.visionDescription) {
                     redirectUrl += `&desc=${encodeURIComponent(data.visionDescription)}`;
@@ -295,9 +299,10 @@
             alert(`Error: ${e.message || 'Network error or processing error.'}`);
             console.error("Fetch/System Error:", e);
         } finally {
-            // 에러가 나거나 완료 시 로딩 화면 닫기
+            // 에러가 나거나 완료 시 최종 상태 초기화
             galleryLoadingScreen.style.display = 'none';
             galleryLoadingScreen.classList.remove('start-rolling');
+            galleryLoadingScreen.style.opacity = 1; // 다음 사용을 위해 Opacity 복구
         }
     });
 
