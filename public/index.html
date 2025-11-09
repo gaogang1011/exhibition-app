@@ -12,7 +12,9 @@
     <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
 </head>
 <body>
-<div class="container" id="pageContainer"> <a href="gallery.html" class="btn gallery-nav-btn gallery-nav"><i class="fas fa-images"></i> GALLERY</a>
+<div class="container">
+
+    <a href="gallery.html" class="btn gallery-nav-btn gallery-nav"><i class="fas fa-images"></i> GALLERY</a>
 
     <h1>AI STUDIO <i class="fas fa-paint-brush"></i></h1>
 
@@ -80,6 +82,7 @@
 </div>
 
 <script>
+    // ⭐️ [복구된 전역 변수 초기화]
     let currentMode = 'image';
     let pcUploadedFile = null;
     let qrUploadedFileName = null;
@@ -101,20 +104,77 @@
     const galleryLoadingScreen = document.getElementById('galleryLoadingScreen');
     const loadingGif = document.querySelector('.loading-gif-full');
     const loadingText = document.querySelector('.loading-text-full');
-    const mainContent = document.getElementById('pageContainer'); // ⭐️ [추가] 메인 콘텐츠
-
 
     const GIF_WHITE_FRAME_TIME_MS = 2500;
     const FINAL_WAIT_MS = 200;
 
-    // --- 기타 로직 (유지) ---
+    // --- 갤러리 이미지 로드 (유지) ---
+    async function loadGalleryImages() {
+        try {
+            const response = await fetch('/api/gallery-list');
+            const data = await response.json();
 
-    document.querySelectorAll('.mode-btn').forEach(button => { /* ... (로직 유지) ... */ });
+            if (data.images && data.images.length > 0) {
+                const galleryTrack = document.getElementById('galleryTrack');
+                galleryTrack.innerHTML = '';
+
+                const imagesToDisplay = data.images.slice(0, 8);
+
+                for (let i = 0; i < 3; i++) {
+                    imagesToDisplay.forEach(item => {
+                        const img = document.createElement('img');
+                        img.src = item.url;
+                        img.className = 'gallery-loading-item';
+                        galleryTrack.appendChild(img);
+                    });
+                }
+            } else {
+                document.getElementById('galleryTrack').innerHTML = '<p class="error-text">No images in gallery to display.</p>';
+            }
+        } catch (e) {
+            console.error("Failed to load gallery images for loading screen:", e);
+        }
+    }
+
+    loadGalleryImages();
+
+    // --- 모드 전환, 업로드, QR 로직 (유지) ---
+
+    document.querySelectorAll('.mode-btn').forEach(button => {
+        button.addEventListener('click', () => {
+            currentMode = button.dataset.mode;
+            document.querySelectorAll('.mode-content').forEach(content => content.style.display = 'none');
+            document.getElementById(currentMode + 'Mode').style.display = 'block';
+            document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+            button.classList.add('active');
+
+            if (pollingInterval) clearInterval(pollingInterval);
+            qrBridgeArea.style.display = 'none';
+            qrUploadStartButton.style.display = 'inline-block';
+        });
+    });
+
+    // ⭐️ [복구] PC 파일 선택 버튼 이벤트 리스너
     uploadButton.addEventListener('click', () => fileUploader.click());
-    fileUploader.addEventListener('change', (event) => { /* ... (로직 유지) ... */ });
+    fileUploader.addEventListener('change', (event) => {
+        pcUploadedFile = event.target.files[0];
+        qrUploadedFileName = null;
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            originalImage.src = e.target.result;
+            originalImage.style.display = 'block';
+            fileStatus.textContent = `File: ${pcUploadedFile.name}`;
+            qrOriginalImage.style.display = 'none';
+        };
+        reader.readAsDataURL(pcUploadedFile);
+    });
+
+    // ⭐️ [복구] QR 시작 버튼 이벤트 리스너
     qrUploadStartButton.addEventListener('click', startQrUploadSession);
     cancelQrButton.addEventListener('click', cancelQrUploadSession);
-    async function startQrUploadSession() { /* ... (로직 유지) ... */
+
+    async function startQrUploadSession() {
         const response = await fetch('/api/start-upload-session');
         const data = await response.json();
         currentSessionId = data.sessionId;
@@ -134,7 +194,7 @@
         pollingInterval = setInterval(checkUploadStatus, 1000);
     }
 
-    async function checkUploadStatus() { /* ... (로직 유지) ... */
+    async function checkUploadStatus() {
         if (!currentSessionId) return;
         const response = await fetch(`/api/check-upload-status/${currentSessionId}`);
         const data = await response.json();
@@ -156,20 +216,21 @@
         }
     }
 
-    function cancelQrUploadSession() { /* ... (로직 유지) ... */
+    function cancelQrUploadSession() {
         if (pollingInterval) clearInterval(pollingInterval);
         currentSessionId = null;
         qrBridgeArea.style.display = 'none';
         qrUploadStartButton.style.display = 'inline-block';
     }
 
-    // --- AI 변환 버튼 클릭 시 (핵심 로직: 깜빡임 제거 및 부드러운 전환) ---
+    // --- AI 변환 버튼 클릭 시 (핵심 로직: 부드러운 전환) ---
     document.getElementById('aiConvertButton').addEventListener('click', async () => {
-        // ... (안전 필터링 로직 유지) ...
-        const DANGER_KEYWORDS = ['sex', 'nude', 'violence', 'gun', 'weapon', 'gore', 'child abuse', 'explicit', 'hate speech', 'bloody'];
         let prompt = document.getElementById('textPromptInput').value;
         const style = document.getElementById('styleSelect').value;
         const stylePrompt = document.getElementById('stylePromptInput').value;
+
+        // 안전 필터링 로직 (유지)
+        const DANGER_KEYWORDS = ['sex', 'nude', 'violence', 'gun', 'weapon', 'gore', 'child abuse', 'explicit', 'hate speech', 'bloody'];
         const fullPrompt = prompt + (stylePrompt ? ', ' + stylePrompt : '');
         const lowerCasePrompt = fullPrompt.toLowerCase();
         let safetyViolation = false;
@@ -188,23 +249,30 @@
         formData.append('style', style);
         formData.append('mode', currentMode);
 
-        if (currentMode === 'image' && pcUploadedFile) { /* ... (로직 유지) ... */ }
-        else if (currentMode === 'qr' && qrUploadedFileName) { /* ... (로직 유지) ... */ }
-        else if (currentMode === 'text' && prompt) { /* ... (로직 유지) ... */ }
-        else { return alert(`[${currentMode} Mode] Missing input.`); }
+        // ⭐️ [핵심 복구] 모드에 따른 FormData 구성 및 필수 입력 데이터 확인 ⭐️
+        if (currentMode === 'image' && pcUploadedFile) {
+            formData.append('pcImage', pcUploadedFile);
+        } else if (currentMode === 'qr' && qrUploadedFileName) {
+            formData.append('qrUploadedFileName', qrUploadedFileName);
+        } else if (currentMode === 'text' && prompt) {
+            // Text to Image: 파일 필요 없음
+        } else {
+            return alert(`[${currentMode} Mode] Missing input.`); // ⭐️ 복구됨
+        }
 
 
-        // ⭐️ [STAGE 1: 검은색 붓칠 시작 및 콘텐츠 숨기기]
-        galleryLoadingScreen.style.display = 'flex';
-        mainContent.style.opacity = 0; // ⭐️ [핵심] 메인 콘텐츠 숨기기 시작
+        // ⭐️ [STAGE 1: 부드러운 검은색 칠하기]
+        fullScreenLoading.style.display = 'flex';
 
+        // 0.3초 transition을 위해 클래스 추가는 setTimeout 밖에서 즉시 실행
         setTimeout(() => {
-            galleryLoadingScreen.classList.add('active');
-            loadingGif.style.opacity = 1;
-            galleryLoadingScreen.classList.add('start-rolling');
+            fullScreenLoading.classList.add('active'); // opacity 0 -> 1 (검은색 칠하기)
+            loadingGif.style.opacity = 1; // GIF를 부드럽게 표시
+            galleryLoadingScreen.classList.add('start-rolling'); // 롤링 시작
         }, 10);
 
         try {
+            // AI 응답 대기
             const response = await fetch('/api/ai-process', { method: 'POST', body: formData });
 
             if (!response.ok) {
@@ -219,14 +287,14 @@
 
                 // ⭐️ [STAGE 2: AI 완료 후 흰색 붓칠 및 리디렉션]
 
-                galleryLoadingScreen.classList.remove('start-rolling'); // 롤링 중지
+                galleryLoadingScreen.classList.remove('start-rolling'); // 롤링 중지 (움직임 멈춤)
 
-                // 배경색을 흰색으로 변경하고 텍스트 색상 변경
+                // 배경색을 흰색으로 변경하고 텍스트 색상 변경 (CSS transition이 적용되어 부드럽게)
                 fullScreenLoading.style.backgroundColor = 'white';
                 document.querySelector('.loading-text-full').style.color = 'black';
-                loadingGif.style.filter = 'none';
+                loadingGif.style.filter = 'none'; // GIF의 필터를 해제하여 흰색 배경에 맞춤
 
-                // 0.5초 CSS transition 완료를 기다린 후 리디렉션 (버벅거림 제거)
+                // 0.5초 CSS transition 완료를 기다린 후 리디렉션하여 버벅거림 제거
                 await new Promise(resolve => setTimeout(resolve, 550));
 
                 // download.html로 이동
@@ -242,13 +310,15 @@
         } catch(e) {
             alert(`Error: ${e.message || 'Network error or processing error.'}`);
             console.error("Fetch/System Error:", e);
-            mainContent.style.opacity = 1; // ⭐️ [복구] 에러 발생 시 콘텐츠 복구
         } finally {
             // 최종 상태 초기화
-            galleryLoadingScreen.style.display = 'none';
-            galleryLoadingScreen.classList.remove('active');
-            galleryLoadingScreen.style.opacity = 1;
-            galleryLoadingScreen.classList.remove('start-rolling');
+            setTimeout(() => {
+                fullScreenLoading.style.display = 'none';
+                fullScreenLoading.classList.remove('active');
+                loadingGif.style.opacity = 0;
+                fullScreenLoading.style.backgroundColor = 'rgba(0, 0, 0, 0.95)';
+                document.querySelector('.loading-text-full').style.color = 'white';
+            }, 600);
         }
     });
 

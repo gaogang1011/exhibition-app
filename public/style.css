@@ -3,8 +3,6 @@
 /* 기본 설정 */
 * {
     box-sizing: border-box;
-    /* ⭐️ [추가] 부드러운 전환을 위한 트랜지션 설정 */
-    transition: opacity 0.3s ease-in-out;
 }
 body {
     font-family: 'Helvetica Neue', Arial, sans-serif;
