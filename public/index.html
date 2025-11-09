@@ -102,6 +102,7 @@
 
     const fullScreenLoading = document.getElementById('fullScreenLoading');
 
+    // ⭐️ GIF 타이밍 상수 (정확히 측정하고 조정해야 합니다.)
     const GIF_WHITE_FRAME_TIME_MS = 2500;
     const FINAL_WAIT_MS = 200;
 
@@ -194,7 +195,7 @@
         const style = document.getElementById('styleSelect').value;
         const stylePrompt = document.getElementById('stylePromptInput').value;
 
-        const formData = new FormData();
+        // ⭐️ [Feature 2] 프롬프트 안전 필터링 로직
         const DANGER_KEYWORDS = ['sex', 'nude', 'violence', 'gun', 'weapon', 'gore', 'child abuse', 'explicit', 'hate speech', 'bloody'];
         const fullPrompt = prompt + (stylePrompt ? ', ' + stylePrompt : '');
         const lowerCasePrompt = fullPrompt.toLowerCase();
@@ -210,7 +211,9 @@
         if (safetyViolation) {
             return alert('⚠️ 콘텐츠 정책 위반 가능성이 있는 키워드(예: 폭력, 성적인 단어)가 감지되었습니다. 내용을 수정해주세요.');
         }
+        // 안전 필터링 로직 끝
 
+        const formData = new FormData();
         formData.append('prompt', fullPrompt);
         formData.append('style', style);
         formData.append('mode', currentMode);
@@ -249,7 +252,7 @@
             if (aiData.filename) {
 
                 // 배경색을 흰색으로 변경하고 텍스트 색상 변경
-                document.getElementById('fullScreenLoading').style.backgroundColor = 'white';
+                fullScreenLoading.style.backgroundColor = 'white';
                 document.querySelector('.loading-text-full').style.color = 'black';
 
                 // 흰색 배경이 확실히 보인 후 리디렉션
@@ -267,8 +270,11 @@
         } catch(e) {
             alert(`Error: ${e.message || 'Network error or processing error.'}`);
             console.error("Fetch/System Error:", e);
-            // 에러 발생 시 로딩 화면 닫기
+        } finally {
+            // 에러가 나거나 완료되면 초기값으로 되돌림
             fullScreenLoading.style.display = 'none';
+            fullScreenLoading.style.backgroundColor = 'rgba(0, 0, 0, 0.95)';
+            document.querySelector('.loading-text-full').style.color = 'white';
         }
     });
 
