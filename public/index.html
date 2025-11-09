@@ -86,7 +86,6 @@
     </div>
 </div>
 
-
 <script>
     let currentMode = 'image';
     let pcUploadedFile = null;
@@ -106,7 +105,6 @@
     const qrOriginalImage = document.getElementById('qrOriginalImage');
     const qrFileStatus = document.getElementById('qrFileStatus');
 
-    // ⭐️ [로딩 관련 요소]
     const galleryLoadingScreen = document.getElementById('galleryLoadingScreen');
     const galleryTrack = document.getElementById('galleryTrack');
 
@@ -119,16 +117,15 @@
             if (data.images && data.images.length > 0) {
                 galleryTrack.innerHTML = '';
 
-                const imagesToDisplay = data.images.slice(0, 8);
+                const imagesToDisplay = data.images.slice(0, 8); // 최대 8개 이미지만 사용
 
-                for (let i = 0; i < 3; i++) {
-                    imagesToDisplay.forEach(item => {
-                        const img = document.createElement('img');
-                        img.src = item.url;
-                        img.className = 'gallery-loading-item';
-                        galleryTrack.appendChild(img);
-                    });
-                }
+                // ⭐️ 이미지를 한 번만 표시하고, 정렬 및 간격을 CSS에 맡깁니다.
+                imagesToDisplay.forEach(item => {
+                    const img = document.createElement('img');
+                    img.src = item.url;
+                    img.className = 'gallery-loading-item';
+                    galleryTrack.appendChild(img);
+                });
             } else {
                 galleryTrack.innerHTML = '<p class="error-text">No images in gallery to display.</p>';
             }
@@ -223,14 +220,13 @@
         qrUploadStartButton.style.display = 'inline-block';
     }
 
-    // --- AI 변환 버튼 클릭 시 (핵심 로직: 롤링 배너 로딩) ---
+    // --- AI 변환 버튼 클릭 시 (핵심 로직) ---
     document.getElementById('aiConvertButton').addEventListener('click', async () => {
+        // ... (안전 필터링 로직 유지) ...
+        const DANGER_KEYWORDS = ['sex', 'nude', 'violence', 'gun', 'weapon', 'gore', 'child abuse', 'explicit', 'hate speech', 'bloody'];
         let prompt = document.getElementById('textPromptInput').value;
         const style = document.getElementById('styleSelect').value;
         const stylePrompt = document.getElementById('stylePromptInput').value;
-
-        // 안전 필터링 로직 (유지)
-        const DANGER_KEYWORDS = ['sex', 'nude', 'violence', 'gun', 'weapon', 'gore', 'child abuse', 'explicit', 'hate speech', 'bloody'];
         const fullPrompt = prompt + (stylePrompt ? ', ' + stylePrompt : '');
         const lowerCasePrompt = fullPrompt.toLowerCase();
         let safetyViolation = false;
@@ -243,21 +239,28 @@
         if (safetyViolation) {
             return alert('⚠️ 콘텐츠 정책 위반 가능성이 있는 키워드가 감지되었습니다. 내용을 수정해주세요.');
         }
-        // 안전 필터링 로직 끝
 
         const formData = new FormData();
         formData.append('prompt', fullPrompt);
         formData.append('style', style);
         formData.append('mode', currentMode);
-        // ... (FormData 구성 로직 유지) ...
 
+        if (currentMode === 'image' && pcUploadedFile) {
+            formData.append('pcImage', pcUploadedFile);
+        } else if (currentMode === 'qr' && qrUploadedFileName) {
+            formData.append('qrUploadedFileName', qrUploadedFileName);
+        } else if (currentMode === 'text' && prompt) {
+            // Text to Image: 파일 필요 없음
+        } else {
+            return alert(`[${currentMode} Mode] Missing input.`);
+        }
 
-        // ⭐️ [STAGE 1: 롤링 배너 시작]
+        // ⭐️ [STAGE 1: 롤링 배너 로딩 시작]
         galleryLoadingScreen.style.display = 'flex';
         galleryLoadingScreen.classList.add('start-rolling'); // CSS 애니메이션 시작
 
         try {
-            // AI 응답을 기다리는 Promise
+            // AI 응답 대기
             const response = await fetch('/api/ai-process', { method: 'POST', body: formData });
 
             if (!response.ok) {
@@ -270,13 +273,10 @@
 
             if (data.filename) {
 
-                // ⭐️ [STAGE 2: AI 완료 후 롤링 중지 및 리디렉션]
+                // ⭐️ [STAGE 2: 롤링 중지 및 리디렉션]
                 galleryLoadingScreen.classList.remove('start-rolling'); // 롤링 중지
 
-                // ⭐️ 부드러운 전환을 위한 짧은 대기 (0.3초)
-                await new Promise(resolve => setTimeout(resolve, 300));
-
-                // download.html로 이동
+                // ⭐️ 다운로드 페이지로 즉시 이동 (버벅거림 제거)
                 let redirectUrl = `download.html?file=${data.filename}&mode=${data.mode}`;
                 if (data.visionDescription) {
                     redirectUrl += `&desc=${encodeURIComponent(data.visionDescription)}`;

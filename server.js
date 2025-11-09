@@ -48,7 +48,7 @@ app.use(express.static(PUBLIC_PATH));
 app.use(express.json());
 
 // ===================================================
-// 보조 함수: 이미지를 Base64로 인코딩
+// 보조 함수: 이미지를 Base64로 인코딩 (유지)
 // ===================================================
 function imageToBase64(filePath) {
     if (!fs.existsSync(filePath)) {
@@ -79,7 +79,7 @@ function imageToBase64(filePath) {
 }
 
 // ===================================================
-// PC-모바일 브리지 API
+// PC-모바일 브리지 API (유지)
 // ===================================================
 
 app.get('/api/start-upload-session', (req, res) => {
@@ -159,7 +159,7 @@ app.post('/api/ai-process', upload.single('pcImage'), async (req, res) => {
                 messages: [
                     {
                         role: "system",
-                        // ⭐️ [한국어 요청] Vision 분석 결과 한국어 요청
+                        // ⭐️ 한국어 분석 유지
                         content: "You are an expert AI image analyzer. Describe the visual elements of the photo (main subject, pose, lighting, colors, background structure). The output MUST be a single, detailed Korean text prompt (under 100 words), optimizing for image structure and composition retention. Do NOT add any stylistic terms. If the subject is a person, describe them only as a 'humanoid figure' or 'character' and avoid specific identifiers or demographics. Respond only in Korean.",
                     },
                     {
@@ -181,7 +181,7 @@ app.post('/api/ai-process', upload.single('pcImage'), async (req, res) => {
 
             visionDescription = visionResponse.choices[0].message.content.trim();
 
-            // 2. Vision 분석 결과와 사용자 프롬프트를 결합 (DALL-E는 영어 프롬프트에 최적화되어 있으므로, 이 분석 결과는 DALL-E 호출 시 영어로 재구성됨)
+            // 2. Vision 분석 결과와 사용자 프롬프트를 결합
             basePrompt = `TRANSFORM this image structure: (${visionDescription}). User's style request: ${basePrompt}`;
 
         }
@@ -191,13 +191,13 @@ app.post('/api/ai-process', upload.single('pcImage'), async (req, res) => {
         let finalPrompt = basePrompt;
 
         if (mode === 'image' || mode === 'qr') {
-            // [최종 최적화] DALL-E에게 '변환'을 강제하는 강력한 프롬프트 구조 사용
             finalPrompt =
                 `Based on the content described: "${visionDescription}". ` +
                 `The user wants to transform this exact composition into the requested style. ` +
                 `Maintain the subject's pose, the overall composition, and the color scheme. ` +
                 `Style: ${style}. User refinement: ${basePrompt}. Highly detailed, photorealistic quality.`;
         } else {
+            // 텍스트 모드
             finalPrompt = `${basePrompt} in ${style} style. Highly detailed and cinematic quality.`;
         }
 
@@ -287,7 +287,7 @@ app.get('/api/download/:filename', async (req, res) => {
 
     if (!fs.existsSync(filePath)) {
         console.error(`Download file not found: ${filePath}`);
-        return res.status(400).send('다운로드할 파일을 찾을 수 없습니다.');
+        return res.status(404).send('다운로드할 파일을 찾을 수 없습니다.');
     }
 
     try {
