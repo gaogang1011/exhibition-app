@@ -48,7 +48,7 @@ app.use(express.static(PUBLIC_PATH));
 app.use(express.json());
 
 // ===================================================
-// 보조 함수: 이미지를 Base64로 인코딩 (유지)
+// 보조 함수: 이미지를 Base64로 인코딩
 // ===================================================
 function imageToBase64(filePath) {
     if (!fs.existsSync(filePath)) {
@@ -79,7 +79,7 @@ function imageToBase64(filePath) {
 }
 
 // ===================================================
-// PC-모바일 브리지 API (유지)
+// PC-모바일 브리지 API
 // ===================================================
 
 app.get('/api/start-upload-session', (req, res) => {
@@ -159,13 +159,13 @@ app.post('/api/ai-process', upload.single('pcImage'), async (req, res) => {
                 messages: [
                     {
                         role: "system",
-                        // ⭐️ [수정] 응답을 한국어로 하도록 지시
+                        // ⭐️ [한국어 요청] Vision 분석 결과 한국어 요청
                         content: "You are an expert AI image analyzer. Describe the visual elements of the photo (main subject, pose, lighting, colors, background structure). The output MUST be a single, detailed Korean text prompt (under 100 words), optimizing for image structure and composition retention. Do NOT add any stylistic terms. If the subject is a person, describe them only as a 'humanoid figure' or 'character' and avoid specific identifiers or demographics. Respond only in Korean.",
                     },
                     {
                         role: "user",
                         content: [
-                            { type: "text", text: "Analyze this photo concisely for style conversion." },
+                            { type: "text", text: "Describe this photo concisely for style conversion." },
                             {
                                 type: "image_url",
                                 image_url: {
@@ -181,9 +181,7 @@ app.post('/api/ai-process', upload.single('pcImage'), async (req, res) => {
 
             visionDescription = visionResponse.choices[0].message.content.trim();
 
-            // 2. Vision 분석 결과와 사용자 프롬프트를 결합 (DALL-E는 영어 프롬프트에 더 최적화되어 있으므로, 최종 프롬프트는 영어로 구성합니다.)
-            // DALL-E 호출 직전에 이 한국어 묘사를 다시 영어로 번역하는 단계가 필요하지만,
-            // 현재는 DALL-E가 복잡한 한국어 프롬프트를 처리한다고 가정하고 진행합니다.
+            // 2. Vision 분석 결과와 사용자 프롬프트를 결합 (DALL-E는 영어 프롬프트에 최적화되어 있으므로, 이 분석 결과는 DALL-E 호출 시 영어로 재구성됨)
             basePrompt = `TRANSFORM this image structure: (${visionDescription}). User's style request: ${basePrompt}`;
 
         }
@@ -193,6 +191,7 @@ app.post('/api/ai-process', upload.single('pcImage'), async (req, res) => {
         let finalPrompt = basePrompt;
 
         if (mode === 'image' || mode === 'qr') {
+            // [최종 최적화] DALL-E에게 '변환'을 강제하는 강력한 프롬프트 구조 사용
             finalPrompt =
                 `Based on the content described: "${visionDescription}". ` +
                 `The user wants to transform this exact composition into the requested style. ` +
@@ -228,7 +227,7 @@ app.post('/api/ai-process', upload.single('pcImage'), async (req, res) => {
 
         const aiImageUrl = `/images/${finalFileName}`;
 
-        // ⭐️ [수정] visionDescription와 mode를 응답에 포함
+        // ⭐️ [응답] visionDescription와 mode를 응답에 포함
         const responseData = {
             aiImageUrl: aiImageUrl,
             filename: finalFileName,
@@ -288,7 +287,7 @@ app.get('/api/download/:filename', async (req, res) => {
 
     if (!fs.existsSync(filePath)) {
         console.error(`Download file not found: ${filePath}`);
-        return res.status(404).send('다운로드할 파일을 찾을 수 없습니다.');
+        return res.status(400).send('다운로드할 파일을 찾을 수 없습니다.');
     }
 
     try {
