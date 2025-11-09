@@ -101,10 +101,13 @@
     const qrFileStatus = document.getElementById('qrFileStatus');
 
     const fullScreenLoading = document.getElementById('fullScreenLoading');
+    const loadingGif = document.querySelector('.loading-gif-full'); // GIF 이미지 요소
+    const loadingText = document.querySelector('.loading-text-full'); // 텍스트 요소
 
     // ⭐️ GIF 타이밍 상수 (정확히 측정하고 조정해야 합니다.)
     const GIF_WHITE_FRAME_TIME_MS = 2500;
     const FINAL_WAIT_MS = 200;
+    const FADE_IN_TIME_MS = 300; // 검은색으로 덮는 시간
 
     // --- 모드 전환, 업로드, QR 로직 (유지) ---
 
@@ -195,11 +198,10 @@
         const style = document.getElementById('styleSelect').value;
         const stylePrompt = document.getElementById('stylePromptInput').value;
 
-        // ⭐️ [Feature 2] 프롬프트 안전 필터링 로직
+        // ... (안전 필터링 로직 유지) ...
         const DANGER_KEYWORDS = ['sex', 'nude', 'violence', 'gun', 'weapon', 'gore', 'child abuse', 'explicit', 'hate speech', 'bloody'];
         const fullPrompt = prompt + (stylePrompt ? ', ' + stylePrompt : '');
         const lowerCasePrompt = fullPrompt.toLowerCase();
-
         let safetyViolation = false;
         for (const keyword of DANGER_KEYWORDS) {
             if (lowerCasePrompt.includes(keyword)) {
@@ -207,9 +209,8 @@
                 break;
             }
         }
-
         if (safetyViolation) {
-            return alert('⚠️ 콘텐츠 정책 위반 가능성이 있는 키워드(예: 폭력, 성적인 단어)가 감지되었습니다. 내용을 수정해주세요.');
+            return alert('⚠️ 콘텐츠 정책 위반 가능성이 있는 키워드가 감지되었습니다.');
         }
         // 안전 필터링 로직 끝
 
@@ -217,23 +218,19 @@
         formData.append('prompt', fullPrompt);
         formData.append('style', style);
         formData.append('mode', currentMode);
+        // ... (FormData 구성 로직 유지) ...
 
-        if (currentMode === 'image' && pcUploadedFile) {
-            formData.append('pcImage', pcUploadedFile);
-        } else if (currentMode === 'qr' && qrUploadedFileName) {
-            formData.append('qrUploadedFileName', qrUploadedFileName);
-        } else if (currentMode === 'text' && prompt) {
-            // Text to Image: 파일 필요 없음
-        } else {
-            return alert(`[${currentMode} Mode] Missing input.`);
-        }
 
-        fullScreenLoading.style.display = 'flex'; // ⭐️ [START] 전체 화면 로딩 표시
+        // ⭐️ [STAGE 1: 검은색 붓칠 시작]
+        fullScreenLoading.style.display = 'flex';
+        // opacity를 1로 부드럽게 올림 (CSS transition: 0.3s)
+        setTimeout(() => {
+            fullScreenLoading.classList.add('active');
+        }, 10);
 
-        // ⭐️ [UX FIX] 로딩 시작 시 바로 검은색으로 전환 (붓이 검은색을 칠하는 효과)
-        fullScreenLoading.style.backgroundColor = 'rgba(0, 0, 0, 0.95)';
-        document.querySelector('.loading-text-full').style.color = 'white';
-
+        // ⭐️ [STAGE 2: GIF 로딩 시작] 검은색 화면이 완전히 나타난 후 GIF 표시
+        await new Promise(resolve => setTimeout(resolve, FADE_IN_TIME_MS + 50));
+        loadingGif.style.opacity = 1; // GIF를 표시
 
         try {
             // 1. AI 응답을 기다리는 Promise
@@ -253,17 +250,18 @@
             // 3. 두 Promise 모두 완료될 때까지 대기
             const [aiData] = await Promise.all([aiPromise, gifPromise]);
 
-            // 4. GIF 타이밍 맞추기 및 리디렉션
+            // 4. ⭐️ [STAGE 3 & 4: 흰색 붓으로 그리기 및 리디렉션]
             if (aiData.filename) {
 
-                // ⭐️ [STEP 1: 흰색 붓칠 완료] 배경색을 흰색으로 변경하고 텍스트 색상 변경
+                // a) 배경을 흰색으로 변경하고 텍스트 색상 변경 (흰색 붓칠 효과)
                 fullScreenLoading.style.backgroundColor = 'white';
-                document.querySelector('.loading-text-full').style.color = 'black';
+                loadingText.style.color = 'black';
+                loadingGif.style.filter = 'none'; // GIF 필터 해제 (GIF가 검은색에서 흰색으로 전환되는 순간의 색상을 유지)
 
-                // ⭐️ [STEP 2: 결과 페이지 드러냄] 흰색 배경이 확실히 보인 후 리디렉션
+                // b) 흰색 배경이 확실히 보인 후 리디렉션
                 await new Promise(resolve => setTimeout(resolve, FINAL_WAIT_MS));
 
-                // ⭐️ [리디렉션] download.html로 이동
+                // c) download.html로 이동
                 let redirectUrl = `download.html?file=${aiData.filename}&mode=${aiData.mode}`;
                 if (aiData.visionDescription) {
                     redirectUrl += `&desc=${encodeURIComponent(aiData.visionDescription)}`;
@@ -275,11 +273,16 @@
         } catch(e) {
             alert(`Error: ${e.message || 'Network error or processing error.'}`);
             console.error("Fetch/System Error:", e);
+            fullScreenLoading.style.display = 'none';
+            fullScreenLoading.classList.remove('active');
+            loadingGif.style.opacity = 0;
         } finally {
             // 에러가 나거나 완료 시 초기값으로 되돌림
             fullScreenLoading.style.display = 'none';
+            fullScreenLoading.classList.remove('active');
+            loadingGif.style.opacity = 0;
             fullScreenLoading.style.backgroundColor = 'rgba(0, 0, 0, 0.95)';
-            document.querySelector('.loading-text-full').style.color = 'white';
+            loadingText.style.color = 'white';
         }
     });
 

@@ -147,36 +147,52 @@ h3, h4 {
     }
 }
 
-/* ⭐️ [수정 완료] GIF 로딩 오버레이 스타일 (화면 전체 채우기) */
+/* =====================================
+   GIF 로딩 오버레이 스타일 (화면 전체 채우기 및 PPT 전환 효과)
+   ===================================== */
 .full-screen-loading {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.95); /* 초기 검정색 배경 */
+    background-color: rgba(0, 0, 0, 0.95); /* 초기 검정 배경 */
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
     z-index: 9999;
     margin: 0;
-    transition: background-color 0.1s ease-out; /* 배경색 전환 부드럽게 유지 */
+
+    /* ⭐️ [핵심] 투명도 및 배경색 전환 효과를 위한 트랜지션 */
+    transition: opacity 0.3s ease-in-out, background-color 0.1s linear;
+
+    opacity: 0; /* JS로 active 클래스 추가 전에는 투명하게 유지 */
+    visibility: hidden; /* transition을 위해 display: none 대신 사용 */
+}
+/* ⭐️ [추가] 로딩 활성화 클래스: 검은색으로 덮는 효과 */
+.full-screen-loading.active {
+    opacity: 1;
+    visibility: visible;
 }
 
-/* GIF 이미지 크기 조정 */
+
+/* GIF 이미지 크기 조정 (화면 꽉 채움) */
 .loading-gif-full {
     width: 100%;
     height: 100%;
     max-width: none;
     max-height: none;
-    object-fit: cover;
+    object-fit: cover; /* 화면을 덮도록 설정 */
     filter: invert(1);
 
     position: absolute;
     top: 0;
     left: 0;
     z-index: 10;
+
+    opacity: 0; /* GIF는 처음에 숨겨져 있다가 JS로 표시 */
+    transition: opacity 0.5s ease-in;
 }
 
 .loading-text-full {
