@@ -118,9 +118,9 @@ h3, h4 {
     max-height: 500px;
     margin: 20px auto;
     object-fit: contain;
-    border-radius: 4px;
-    border: 2px solid #ddd;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 0;
+    border: none;
+    box-shadow: none;
 }
 
 /* 액션 버튼 스타일 (GENERATE 버튼) */
@@ -150,6 +150,12 @@ h3, h4 {
 /* =====================================
    ⭐️ [수정] 롤링 배너 로딩 스타일 (부드러운 전환 및 애니메이션)
    ===================================== */
+@keyframes dots {
+    0% { content: "."; }
+    33% { content: ".."; }
+    66% { content: "..."; }
+    100% { content: "."; }
+}
 @keyframes roll {
     from { transform: translateX(0); }
     to { transform: translateX(-33.3333%); }
@@ -169,14 +175,16 @@ h3, h4 {
     z-index: 9999;
     overflow: hidden;
 
-    /* ⭐️ [핵심] 투명도 변화에 0.5초 트랜지션 추가 */
-    transition: opacity 0.5s ease-out;
-    opacity: 1; /* JS에서 display:flex 할 때 즉시 불투명하게 시작 */
+    /* ⭐️ [핵심] 부드러운 전환을 위한 opacity 트랜지션 추가 */
+    transition: opacity 0.5s ease-in-out;
+    opacity: 0; /* JS에서 active 클래스 추가 전에는 투명하게 유지 */
+    visibility: hidden;
 }
-/* ⭐️ [추가] 퇴장 시 사용될 클래스 */
-.gallery-loading-screen.fade-out {
-    opacity: 0;
+.gallery-loading-screen.active {
+    opacity: 1;
+    visibility: visible;
 }
+
 
 .gallery-loading-screen.start-rolling .gallery-track {
     animation: roll 15s linear infinite;
@@ -213,6 +221,7 @@ h3, h4 {
     margin-right: 20px;
 }
 
+/* ⭐️ [수정] 로딩 문구 스타일 */
 .loading-overlay-text {
     position: relative;
     background-color: rgba(0, 0, 0, 0.7);
@@ -226,4 +235,27 @@ h3, h4 {
 .loading-overlay-text p {
     margin: 0;
 }
-/* ... (나머지 CSS 유지) ... */
+.loading-overlay-text p::after {
+    /* ⭐️ [추가] ... 애니메이션 적용 */
+    content: ".";
+    animation: dots 1.5s infinite step-start both;
+    display: inline-block;
+    width: 20px;
+    text-align: left;
+    margin-left: 5px;
+}
+
+
+/* QR 코드 스타일 */
+.qr-box {
+    margin: 15px auto;
+    padding: 8px;
+    border: 2px solid #111;
+    display: inline-block;
+    background-color: white;
+}
+.safety-note {
+    color: #ff3e3e;
+    font-size: 0.8em;
+    margin-top: 5px;
+}
