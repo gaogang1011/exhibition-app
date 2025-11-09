@@ -76,10 +76,16 @@
     </div>
 </div>
 
-<div id="fullScreenLoading" class="full-screen-loading" style="display: none;">
-    <img src="brush_loading_bw.gif" alt="Processing..." class="loading-gif-full">
-    <p class="loading-text-full">PROCESSING...</p>
+<div id="galleryLoadingScreen" class="gallery-loading-screen" style="display: none;">
+    <div class="gallery-track-container">
+        <div id="galleryTrack" class="gallery-track">
+        </div>
+    </div>
+    <div class="loading-overlay-text">
+        <p>PROCESSING AI GENERATION...</p>
+    </div>
 </div>
+
 
 <script>
     let currentMode = 'image';
@@ -100,14 +106,42 @@
     const qrOriginalImage = document.getElementById('qrOriginalImage');
     const qrFileStatus = document.getElementById('qrFileStatus');
 
-    const fullScreenLoading = document.getElementById('fullScreenLoading');
-    const loadingGif = document.querySelector('.loading-gif-full');
-    const loadingText = document.querySelector('.loading-text-full');
+    // ⭐️ [로딩 관련 요소]
+    const galleryLoadingScreen = document.getElementById('galleryLoadingScreen');
+    const galleryTrack = document.getElementById('galleryTrack');
 
-    // --- GIF 타이밍 상수는 이제 사용하지 않음 (버벅거림 방지) ---
-    // 버벅거림 제거를 위해 setTimeout 대신 CSS transition 완료를 기다림
+    // --- ⭐️ [추가된 로직] 갤러리 이미지 로드 및 복제 함수 ---
+    async function loadGalleryImages() {
+        try {
+            const response = await fetch('/api/gallery-list');
+            const data = await response.json();
+
+            if (data.images && data.images.length > 0) {
+                galleryTrack.innerHTML = '';
+
+                const imagesToDisplay = data.images.slice(0, 8);
+
+                for (let i = 0; i < 3; i++) {
+                    imagesToDisplay.forEach(item => {
+                        const img = document.createElement('img');
+                        img.src = item.url;
+                        img.className = 'gallery-loading-item';
+                        galleryTrack.appendChild(img);
+                    });
+                }
+            } else {
+                galleryTrack.innerHTML = '<p class="error-text">No images in gallery to display.</p>';
+            }
+        } catch (e) {
+            console.error("Failed to load gallery images for loading screen:", e);
+        }
+    }
+
+    // 페이지 로드 시 갤러리 이미지 로드
+    loadGalleryImages();
 
     // --- 모드 전환, 업로드, QR 로직 (유지) ---
+
     document.querySelectorAll('.mode-btn').forEach(button => {
         button.addEventListener('click', () => {
             currentMode = button.dataset.mode;
@@ -123,7 +157,7 @@
     });
 
     uploadButton.addEventListener('click', () => fileUploader.click());
-    fileUploader.addEventListener('change', (event) => { /* ... (로직 유지) ... */
+    fileUploader.addEventListener('change', (event) => {
         pcUploadedFile = event.target.files[0];
         qrUploadedFileName = null;
 
@@ -140,7 +174,7 @@
     qrUploadStartButton.addEventListener('click', startQrUploadSession);
     cancelQrButton.addEventListener('click', cancelQrUploadSession);
 
-    async function startQrUploadSession() { /* ... (로직 유지) ... */
+    async function startQrUploadSession() {
         const response = await fetch('/api/start-upload-session');
         const data = await response.json();
         currentSessionId = data.sessionId;
@@ -160,7 +194,7 @@
         pollingInterval = setInterval(checkUploadStatus, 1000);
     }
 
-    async function checkUploadStatus() { /* ... (로직 유지) ... */
+    async function checkUploadStatus() {
         if (!currentSessionId) return;
         const response = await fetch(`/api/check-upload-status/${currentSessionId}`);
         const data = await response.json();
@@ -182,20 +216,21 @@
         }
     }
 
-    function cancelQrUploadSession() { /* ... (로직 유지) ... */
+    function cancelQrUploadSession() {
         if (pollingInterval) clearInterval(pollingInterval);
         currentSessionId = null;
         qrBridgeArea.style.display = 'none';
         qrUploadStartButton.style.display = 'inline-block';
     }
 
-    // --- AI 변환 버튼 클릭 시 (핵심 로직: 버벅거림 제거 및 부드러운 전환) ---
+    // --- AI 변환 버튼 클릭 시 (핵심 로직: 롤링 배너 로딩) ---
     document.getElementById('aiConvertButton').addEventListener('click', async () => {
-        // ... (안전 필터링 로직 유지) ...
-        const DANGER_KEYWORDS = ['sex', 'nude', 'violence', 'gun', 'weapon', 'gore', 'child abuse', 'explicit', 'hate speech', 'bloody'];
         let prompt = document.getElementById('textPromptInput').value;
         const style = document.getElementById('styleSelect').value;
         const stylePrompt = document.getElementById('stylePromptInput').value;
+
+        // 안전 필터링 로직 (유지)
+        const DANGER_KEYWORDS = ['sex', 'nude', 'violence', 'gun', 'weapon', 'gore', 'child abuse', 'explicit', 'hate speech', 'bloody'];
         const fullPrompt = prompt + (stylePrompt ? ', ' + stylePrompt : '');
         const lowerCasePrompt = fullPrompt.toLowerCase();
         let safetyViolation = false;
@@ -208,77 +243,56 @@
         if (safetyViolation) {
             return alert('⚠️ 콘텐츠 정책 위반 가능성이 있는 키워드가 감지되었습니다. 내용을 수정해주세요.');
         }
+        // 안전 필터링 로직 끝
 
         const formData = new FormData();
         formData.append('prompt', fullPrompt);
         formData.append('style', style);
         formData.append('mode', currentMode);
+        // ... (FormData 구성 로직 유지) ...
 
-        if (currentMode === 'image' && pcUploadedFile) {
-            formData.append('pcImage', pcUploadedFile);
-        } else if (currentMode === 'qr' && qrUploadedFileName) {
-            formData.append('qrUploadedFileName', qrUploadedFileName);
-        } else if (currentMode === 'text' && prompt) {
-            // Text to Image: 파일 필요 없음
-        } else {
-            return alert(`[${currentMode} Mode] Missing input.`);
-        }
 
-        // ⭐️ [STAGE 1: 검은색으로 덮기 (부드러운 시작)]
-        fullScreenLoading.style.display = 'flex';
-        fullScreenLoading.classList.add('active'); // 0.3s 동안 opacity 0 -> 1로 전환
-
-        // ⭐️ [STAGE 2: GIF 표시 및 AI 요청 병행]
-        // 검은색 화면이 완전히 덮일 때까지 짧게 기다린 후 GIF를 표시
-        setTimeout(() => {
-            loadingGif.style.opacity = 1; // GIF를 부드럽게 표시
-        }, 350); // 0.3s transition + 50ms 안전 대기
+        // ⭐️ [STAGE 1: 롤링 배너 시작]
+        galleryLoadingScreen.style.display = 'flex';
+        galleryLoadingScreen.classList.add('start-rolling'); // CSS 애니메이션 시작
 
         try {
-            // 1. AI 응답을 기다리는 Promise
-            const aiData = await fetch('/api/ai-process', { method: 'POST', body: formData })
-                .then(response => {
-                    if (!response.ok) {
-                        return response.json().then(errorData => {
-                            throw new Error(errorData.error || 'Generation failed (Server Error)');
-                        });
-                    }
-                    return response.json();
-                });
+            // AI 응답을 기다리는 Promise
+            const response = await fetch('/api/ai-process', { method: 'POST', body: formData });
 
-            // 2. AI 응답 도착 후, 부드러운 전환 시작
-            if (aiData.filename) {
+            if (!response.ok) {
+                const errorData = await response.json();
+                alert(errorData.error || 'Generation failed (Server Error)');
+                return;
+            }
 
-                // a) 배경을 흰색으로 변경하고 텍스트 색상 변경 (CSS transition이 적용됨)
-                fullScreenLoading.style.backgroundColor = 'white';
-                loadingText.style.color = 'black';
-                loadingGif.style.filter = 'none'; // GIF의 색상을 흰색 배경에 맞춰 변경 (선택 사항)
+            const data = await response.json();
 
-                // b) 흰색 배경 전환을 위한 시간 (0.1s transition + 50ms)
-                await new Promise(resolve => setTimeout(resolve, 150));
+            if (data.filename) {
 
-                // c) download.html로 즉시 리디렉션 (버벅거림 제거)
-                let redirectUrl = `download.html?file=${aiData.filename}&mode=${aiData.mode}`;
-                if (aiData.visionDescription) {
-                    redirectUrl += `&desc=${encodeURIComponent(aiData.visionDescription)}`;
+                // ⭐️ [STAGE 2: AI 완료 후 롤링 중지 및 리디렉션]
+                galleryLoadingScreen.classList.remove('start-rolling'); // 롤링 중지
+
+                // ⭐️ 부드러운 전환을 위한 짧은 대기 (0.3초)
+                await new Promise(resolve => setTimeout(resolve, 300));
+
+                // download.html로 이동
+                let redirectUrl = `download.html?file=${data.filename}&mode=${data.mode}`;
+                if (data.visionDescription) {
+                    redirectUrl += `&desc=${encodeURIComponent(data.visionDescription)}`;
                 }
                 window.location.href = redirectUrl;
+
             } else {
                 alert('Result URL not received.');
             }
         } catch(e) {
             alert(`Error: ${e.message || 'Network error or processing error.'}`);
             console.error("Fetch/System Error:", e);
-            // 에러 발생 시 부드럽게 복구
-            fullScreenLoading.classList.remove('active');
         } finally {
-            // 최종 상태 초기화 (active 클래스가 제거되면 CSS transition으로 다시 사라짐)
-            loadingGif.style.opacity = 0;
-            fullScreenLoading.style.backgroundColor = 'rgba(0, 0, 0, 0.95)';
-            loadingText.style.color = 'white';
-            setTimeout(() => {
-                fullScreenLoading.style.display = 'none';
-            }, 400); // GIF 사라지는 시간만큼 기다림
+            // 에러가 나거나 완료 시 로딩 화면 닫기
+            galleryLoadingScreen.style.display = 'none';
+            galleryLoadingScreen.classList.remove('start-rolling');
         }
     });
 

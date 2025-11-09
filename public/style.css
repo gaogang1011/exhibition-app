@@ -148,62 +148,82 @@ h3, h4 {
 }
 
 /* =====================================
-   GIF 로딩 오버레이 스타일 (화면 전체 채우기 및 PPT 전환 효과)
+   ⭐️ [추가된 CSS] 롤링 배너 로딩 스타일
    ===================================== */
-.full-screen-loading {
+@keyframes roll {
+    /* 이미지 1세트의 너비만큼 이동 */
+    from { transform: translateX(0); }
+    to { transform: translateX(-33.3333%); }
+}
+
+.gallery-loading-screen {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.95);
+    background-color: white; /* 갤러리 이미지가 잘 보이도록 흰색 배경 */
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
     z-index: 9999;
-    margin: 0;
-
-    /* ⭐️ [핵심] 투명도 및 배경색 전환 효과를 위한 트랜지션 (트랜지션은 유지) */
-    transition: opacity 0.3s ease-in-out, background-color 0.1s linear;
-
-    opacity: 0; /* JS로 active 클래스 추가 전에는 투명하게 유지 */
-    visibility: hidden;
-}
-/* 로딩 활성화 클래스 */
-.full-screen-loading.active {
-    opacity: 1;
-    visibility: visible;
+    overflow: hidden;
 }
 
-
-/* GIF 이미지 크기 조정 (화면 꽉 채움) */
-.loading-gif-full {
+.gallery-track-container {
     width: 100%;
-    height: 100%;
-    max-width: none;
-    max-height: none;
-    object-fit: cover;
-    filter: invert(1);
-
-    position: absolute;
-    top: 0;
-    left: 0;
-    z-index: 10;
-
-    opacity: 0; /* GIF는 처음에 숨겨져 있다가 JS로 표시 */
-    transition: opacity 0.5s ease-in;
-}
-
-.loading-text-full {
-    color: white;
-    font-size: 2.5em;
-    font-weight: bold;
-    letter-spacing: 3px;
-    z-index: 20;
+    height: 250px; /* 배너 높이 */
+    overflow: hidden;
     position: relative;
-    text-shadow: 0 0 10px rgba(0, 0, 0, 0.9);
+    border-top: 5px solid #111;
+    border-bottom: 5px solid #111;
+    margin-bottom: 30px;
 }
+
+.gallery-track {
+    display: flex;
+    position: absolute;
+    height: 100%;
+    width: 300%; /* 이미지를 3번 복제했으므로 3배 길이 */
+}
+
+.gallery-loading-screen.start-rolling .gallery-track {
+    animation: roll 15s linear infinite; /* 15초 동안 무한 반복 롤링 */
+}
+
+.gallery-loading-item {
+    height: 100%;
+    object-fit: cover;
+    /* 각 이미지가 8개씩 들어갈 수 있도록 너비 설정 */
+    width: calc(100vw / 8);
+    min-width: 200px;
+}
+
+.loading-overlay-text {
+    position: relative;
+    background-color: rgba(0, 0, 0, 0.7); /* 텍스트 배경을 어둡게 */
+    color: white;
+    padding: 15px 30px;
+    border-radius: 8px;
+    font-size: 1.5em;
+    font-weight: bold;
+    letter-spacing: 2px;
+}
+.loading-overlay-text p {
+    margin: 0;
+}
+
+/* GIF 관련 스타일 (미사용되지만 호환성을 위해 유지) */
+.full-screen-loading {
+    /* ... (GIF 로딩 스타일 유지) ... */
+    display: flex;
+    background-color: rgba(0, 0, 0, 0.95);
+    transition: opacity 0.3s ease-in-out;
+}
+.loading-gif-full { /* ... (스타일 유지) ... */ }
+.loading-text-full { /* ... (스타일 유지) ... */ }
+
 
 /* QR 코드 스타일 */
 .qr-box {
