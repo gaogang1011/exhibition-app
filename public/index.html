@@ -101,13 +101,13 @@
     const qrFileStatus = document.getElementById('qrFileStatus');
 
     const fullScreenLoading = document.getElementById('fullScreenLoading');
-    const loadingGif = document.querySelector('.loading-gif-full'); // GIF 이미지 요소
-    const loadingText = document.querySelector('.loading-text-full'); // 텍스트 요소
+    const loadingGif = document.querySelector('.loading-gif-full');
+    const loadingText = document.querySelector('.loading-text-full');
 
-    // --- GIF 타이밍 상수는 이제 사용하지 않음 ---
+    // --- GIF 타이밍 상수는 이제 사용하지 않음 (버벅거림 방지) ---
+    // 버벅거림 제거를 위해 setTimeout 대신 CSS transition 완료를 기다림
 
     // --- 모드 전환, 업로드, QR 로직 (유지) ---
-
     document.querySelectorAll('.mode-btn').forEach(button => {
         button.addEventListener('click', () => {
             currentMode = button.dataset.mode;
@@ -123,7 +123,7 @@
     });
 
     uploadButton.addEventListener('click', () => fileUploader.click());
-    fileUploader.addEventListener('change', (event) => {
+    fileUploader.addEventListener('change', (event) => { /* ... (로직 유지) ... */
         pcUploadedFile = event.target.files[0];
         qrUploadedFileName = null;
 
@@ -140,7 +140,7 @@
     qrUploadStartButton.addEventListener('click', startQrUploadSession);
     cancelQrButton.addEventListener('click', cancelQrUploadSession);
 
-    async function startQrUploadSession() {
+    async function startQrUploadSession() { /* ... (로직 유지) ... */
         const response = await fetch('/api/start-upload-session');
         const data = await response.json();
         currentSessionId = data.sessionId;
@@ -160,7 +160,7 @@
         pollingInterval = setInterval(checkUploadStatus, 1000);
     }
 
-    async function checkUploadStatus() {
+    async function checkUploadStatus() { /* ... (로직 유지) ... */
         if (!currentSessionId) return;
         const response = await fetch(`/api/check-upload-status/${currentSessionId}`);
         const data = await response.json();
@@ -182,21 +182,20 @@
         }
     }
 
-    function cancelQrUploadSession() {
+    function cancelQrUploadSession() { /* ... (로직 유지) ... */
         if (pollingInterval) clearInterval(pollingInterval);
         currentSessionId = null;
         qrBridgeArea.style.display = 'none';
         qrUploadStartButton.style.display = 'inline-block';
     }
 
-    // --- AI 변환 버튼 클릭 시 (핵심 로직: 버벅거림 제거 및 즉시 리디렉션) ---
+    // --- AI 변환 버튼 클릭 시 (핵심 로직: 버벅거림 제거 및 부드러운 전환) ---
     document.getElementById('aiConvertButton').addEventListener('click', async () => {
+        // ... (안전 필터링 로직 유지) ...
+        const DANGER_KEYWORDS = ['sex', 'nude', 'violence', 'gun', 'weapon', 'gore', 'child abuse', 'explicit', 'hate speech', 'bloody'];
         let prompt = document.getElementById('textPromptInput').value;
         const style = document.getElementById('styleSelect').value;
         const stylePrompt = document.getElementById('stylePromptInput').value;
-
-        // --- 안전 필터링 로직 ---
-        const DANGER_KEYWORDS = ['sex', 'nude', 'violence', 'gun', 'weapon', 'gore', 'child abuse', 'explicit', 'hate speech', 'bloody'];
         const fullPrompt = prompt + (stylePrompt ? ', ' + stylePrompt : '');
         const lowerCasePrompt = fullPrompt.toLowerCase();
         let safetyViolation = false;
@@ -206,11 +205,9 @@
                 break;
             }
         }
-
         if (safetyViolation) {
             return alert('⚠️ 콘텐츠 정책 위반 가능성이 있는 키워드가 감지되었습니다. 내용을 수정해주세요.');
         }
-        // 안전 필터링 로직 끝
 
         const formData = new FormData();
         formData.append('prompt', fullPrompt);
@@ -227,49 +224,61 @@
             return alert(`[${currentMode} Mode] Missing input.`);
         }
 
-        // ⭐️ [STAGE 1: 검은색 붓칠 시작]
+        // ⭐️ [STAGE 1: 검은색으로 덮기 (부드러운 시작)]
         fullScreenLoading.style.display = 'flex';
-        fullScreenLoading.classList.add('active'); // CSS 트랜지션을 통해 부드럽게 검은색으로 덮음
-        loadingGif.style.opacity = 1; // GIF를 표시
+        fullScreenLoading.classList.add('active'); // 0.3s 동안 opacity 0 -> 1로 전환
+
+        // ⭐️ [STAGE 2: GIF 표시 및 AI 요청 병행]
+        // 검은색 화면이 완전히 덮일 때까지 짧게 기다린 후 GIF를 표시
+        setTimeout(() => {
+            loadingGif.style.opacity = 1; // GIF를 부드럽게 표시
+        }, 350); // 0.3s transition + 50ms 안전 대기
 
         try {
-            // AI 응답 대기 (버벅거림의 원인인 Promise.all 제거)
-            const response = await fetch('/api/ai-process', { method: 'POST', body: formData });
+            // 1. AI 응답을 기다리는 Promise
+            const aiData = await fetch('/api/ai-process', { method: 'POST', body: formData })
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(errorData => {
+                            throw new Error(errorData.error || 'Generation failed (Server Error)');
+                        });
+                    }
+                    return response.json();
+                });
 
-            if (!response.ok) {
-                const errorData = await response.json();
-                alert(errorData.error || 'Generation failed (Server Error)');
-                return;
-            }
+            // 2. AI 응답 도착 후, 부드러운 전환 시작
+            if (aiData.filename) {
 
-            const data = await response.json();
-
-            if (data.filename) {
-                // ⭐️ [STAGE 2: 즉시 흰색으로 전환 후 리디렉션]
-                // 배경색을 흰색으로 변경
+                // a) 배경을 흰색으로 변경하고 텍스트 색상 변경 (CSS transition이 적용됨)
                 fullScreenLoading.style.backgroundColor = 'white';
-                document.querySelector('.loading-text-full').style.color = 'black';
+                loadingText.style.color = 'black';
+                loadingGif.style.filter = 'none'; // GIF의 색상을 흰색 배경에 맞춰 변경 (선택 사항)
 
-                // ⭐️ [핵심] GIF 타이밍 대기 없이 바로 리디렉션하여 버벅거림 제거
-                let redirectUrl = `download.html?file=${data.filename}&mode=${data.mode}`;
-                if (data.visionDescription) {
-                    redirectUrl += `&desc=${encodeURIComponent(data.visionDescription)}`;
+                // b) 흰색 배경 전환을 위한 시간 (0.1s transition + 50ms)
+                await new Promise(resolve => setTimeout(resolve, 150));
+
+                // c) download.html로 즉시 리디렉션 (버벅거림 제거)
+                let redirectUrl = `download.html?file=${aiData.filename}&mode=${aiData.mode}`;
+                if (aiData.visionDescription) {
+                    redirectUrl += `&desc=${encodeURIComponent(aiData.visionDescription)}`;
                 }
                 window.location.href = redirectUrl;
-
             } else {
                 alert('Result URL not received.');
             }
         } catch(e) {
             alert(`Error: ${e.message || 'Network error or processing error.'}`);
             console.error("Fetch/System Error:", e);
-        } finally {
-            // 에러가 나거나 완료 시 초기값으로 되돌림 (리디렉션 후에는 이 부분이 실행되지 않음)
-            fullScreenLoading.style.display = 'none';
+            // 에러 발생 시 부드럽게 복구
             fullScreenLoading.classList.remove('active');
+        } finally {
+            // 최종 상태 초기화 (active 클래스가 제거되면 CSS transition으로 다시 사라짐)
             loadingGif.style.opacity = 0;
             fullScreenLoading.style.backgroundColor = 'rgba(0, 0, 0, 0.95)';
-            document.querySelector('.loading-text-full').style.color = 'white';
+            loadingText.style.color = 'white';
+            setTimeout(() => {
+                fullScreenLoading.style.display = 'none';
+            }, 400); // GIF 사라지는 시간만큼 기다림
         }
     });
 
