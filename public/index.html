@@ -12,19 +12,7 @@
     <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
 </head>
 <body>
-
-<div id="galleryLoadingScreen" class="gallery-loading-screen" style="display: none;">
-    <div class="gallery-track-container">
-        <div id="galleryTrack" class="gallery-track">
-        </div>
-    </div>
-    <div class="loading-overlay-text">
-        <p>PROCESSING</p>
-    </div>
-</div>
-
-
-<div class="container" id="mainContent">
+<div class="container">
 
     <a href="gallery.html" class="btn gallery-nav-btn gallery-nav"><i class="fas fa-images"></i> GALLERY</a>
 
@@ -88,6 +76,10 @@
     </div>
 </div>
 
+<div id="fullScreenLoading" class="full-screen-loading" style="display: none;">
+    <img src="brush_loading_bw.gif" alt="Processing..." class="loading-gif-full">
+    <p class="loading-text-full">PROCESSING...</p>
+</div>
 
 <script>
     // ⭐️ [복구된 전역 변수 초기화]
@@ -109,12 +101,13 @@
     const qrOriginalImage = document.getElementById('qrOriginalImage');
     const qrFileStatus = document.getElementById('qrFileStatus');
 
-    // ⭐️ [로딩 요소 복구]
     const galleryLoadingScreen = document.getElementById('galleryLoadingScreen');
-    const galleryTrack = document.getElementById('galleryTrack');
+    const loadingGif = document.querySelector('.loading-gif-full');
+    const loadingText = document.querySelector('.loading-text-full');
 
     const GIF_WHITE_FRAME_TIME_MS = 2500;
     const FINAL_WAIT_MS = 150;
+
 
     // --- 갤러리 이미지 로드 (유지) ---
     async function loadGalleryImages() {
@@ -146,11 +139,25 @@
 
     loadGalleryImages();
 
-    // --- 기타 로직 (유지) ---
+    // --- 모드 전환, 업로드, QR 로직 (유지) ---
 
-    document.querySelectorAll('.mode-btn').forEach(button => { /* ... (로직 유지) ... */ });
+    document.querySelectorAll('.mode-btn').forEach(button => {
+        button.addEventListener('click', () => {
+            currentMode = button.dataset.mode;
+            document.querySelectorAll('.mode-content').forEach(content => content.style.display = 'none');
+            document.getElementById(currentMode + 'Mode').style.display = 'block';
+            document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+            button.classList.add('active');
+
+            if (pollingInterval) clearInterval(pollingInterval);
+            qrBridgeArea.style.display = 'none';
+            qrUploadStartButton.style.display = 'inline-block';
+        });
+    });
+
+    // ⭐️ [복구] PC 파일 선택 버튼 이벤트 리스너
     uploadButton.addEventListener('click', () => fileUploader.click());
-    fileUploader.addEventListener('change', (event) => { /* ... (로직 유지) ... */
+    fileUploader.addEventListener('change', (event) => {
         pcUploadedFile = event.target.files[0];
         qrUploadedFileName = null;
 
@@ -164,10 +171,11 @@
         reader.readAsDataURL(pcUploadedFile);
     });
 
+    // ⭐️ [복구] QR 시작 버튼 이벤트 리스너
     qrUploadStartButton.addEventListener('click', startQrUploadSession);
     cancelQrButton.addEventListener('click', cancelQrUploadSession);
 
-    async function startQrUploadSession() { /* ... (로직 유지) ... */
+    async function startQrUploadSession() {
         const response = await fetch('/api/start-upload-session');
         const data = await response.json();
         currentSessionId = data.sessionId;
@@ -187,7 +195,7 @@
         pollingInterval = setInterval(checkUploadStatus, 1000);
     }
 
-    async function checkUploadStatus() { /* ... (로직 유지) ... */
+    async function checkUploadStatus() {
         if (!currentSessionId) return;
         const response = await fetch(`/api/check-upload-status/${currentSessionId}`);
         const data = await response.json();
@@ -209,7 +217,7 @@
         }
     }
 
-    function cancelQrUploadSession() { /* ... (로직 유지) ... */
+    function cancelQrUploadSession() {
         if (pollingInterval) clearInterval(pollingInterval);
         currentSessionId = null;
         qrBridgeArea.style.display = 'none';
@@ -242,6 +250,7 @@
         formData.append('style', style);
         formData.append('mode', currentMode);
 
+        // ⭐️ [복구] 필수 입력 데이터 확인 ⭐️
         if (currentMode === 'image' && pcUploadedFile) {
             formData.append('pcImage', pcUploadedFile);
         } else if (currentMode === 'qr' && qrUploadedFileName) {
