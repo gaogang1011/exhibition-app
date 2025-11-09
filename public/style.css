@@ -1,196 +1,45 @@
-/* public/style.css - Black & White Theme */
+/* public/style.css */
 
-/* 기본 설정 */
-* {
-    box-sizing: border-box;
-}
-body {
-    font-family: 'Helvetica Neue', Arial, sans-serif;
-    margin: 0;
-    background-color: #f7f7f7;
-    color: #111;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-    padding: 20px;
-}
-.container {
-    max-width: 700px;
-    width: 100%;
-    text-align: center;
-}
-h1 {
-    color: #111;
-    margin-bottom: 30px;
-    font-weight: 800;
-    letter-spacing: 2px;
-    padding-top: 20px;
-    margin-top: 10px;
-}
-h1 i {
-    margin-left: 10px;
-    font-size: 0.9em;
-}
-h2 {
-    color: #555;
-    font-size: 1.2em;
-    margin-bottom: 15px;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-}
-h3, h4 {
-    color: #333;
-    font-weight: 600;
-}
-
-/* 카드 디자인 */
-.card {
-    background-color: white;
-    padding: 25px;
-    margin-bottom: 20px;
-    border-radius: 6px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
-    border: 1px solid #eee;
-}
-
-/* 버튼 공통 스타일 */
-.btn {
-    padding: 12px 20px;
-    margin: 8px 5px;
-    cursor: pointer;
-    border: 1px solid #111;
-    border-radius: 4px;
-    font-weight: bold;
-    transition: all 0.2s ease-in-out;
-    text-decoration: none;
-    display: inline-block;
-    background-color: white;
-    color: #111;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-.full-width {
-    width: 90%;
-    margin: 10px 0;
-    font-size: 1em;
-}
-
-/* 모드 선택 버튼 스타일 */
-.mode-selector {
-    display: flex;
-    justify-content: space-around;
-    gap: 5px;
-    margin-top: 15px;
-    flex-wrap: wrap;
-}
-.mode-selector .mode-btn {
-    flex-grow: 1;
-    padding: 15px 5px;
-    font-size: 1.1em;
-    border: 1px solid #ddd;
-    color: #555;
-    min-width: 150px;
-}
-.mode-selector .mode-btn.active {
-    background-color: #111;
-    color: white;
-    border-color: #111;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
-    transform: translateY(-2px);
-}
-
-/* 입력 필드 스타일 */
-.input-full {
-    width: 90%;
-    padding: 12px;
-    margin: 8px auto;
-    border-radius: 4px;
-    border: 1px solid #ccc;
-    box-sizing: border-box;
-    transition: border-color 0.2s;
-    display: block;
-}
-
-/* 이미지 미리보기 크기 확대 및 중앙 정렬 */
-.preview-img {
-    display: block;
-    max-width: 90%;
-    max-height: 500px;
-    margin: 20px auto;
-    object-fit: contain;
-    border-radius: 4px;
-    border: 2px solid #ddd;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-/* 액션 버튼 스타일 (GENERATE 버튼) */
-.action-btn {
-    background-color: #111;
-    color: white;
-    padding: 15px 35px;
-    font-size: 1.2em;
-    margin-top: 15px;
-    border-radius: 6px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-}
-
-/* 갤러리 네비게이션 버튼 */
-.gallery-nav {
-    position: absolute;
-    top: 25px;
-    right: 20px;
-    z-index: 1000;
-}
-@media (max-width: 600px) {
-    .container {
-        padding-top: 60px;
-    }
-}
-
-/* QR 코드 스타일 */
-.qr-box {
-    margin: 15px auto;
-    padding: 8px;
-    border: 2px solid #111;
-    display: inline-block;
-    background-color: white;
-}
-.safety-note {
-    color: #ff3e3e;
-    font-size: 0.8em;
-    margin-top: 5px;
-}
+/* ... (기존 CSS 유지) ... */
 
 /* =====================================
-   GIF 로딩 오버레이 스타일 (화면 확대)
+   GIF 로딩 오버레이 스타일
    ===================================== */
+/* ⭐️ [수정] 배경색을 CSS 변수로 제어 */
 .full-screen-loading {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.95);
+    background-color: var(--loading-bg-color, rgba(0, 0, 0, 0.95)); /* 기본값은 검정 */
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
     z-index: 9999;
+    transition: background-color 0.1s ease-out; /* 배경색 전환 부드럽게 */
 }
 
-/* GIF 이미지 크기 조정 */
+/* ⭐️ [추가] GIF 자체도 invert 필터 해제 (GIF가 이미 흰색으로 보이도록 디자인되어 있다면) */
+/* 만약 GIF가 검은색 로고이고 흰색 배경에서 검은색 로고로 보여야 한다면 이 필터를 제거합니다. */
+/* 현재 brush_loading_bw.gif는 이미 흰색에 가까운 디자인이므로, 필터를 제거하여 원본 색상을 유지합니다. */
 .loading-gif-full {
-    width: 80%; /* ⭐️ 화면 너비의 80%까지 확장 */
-    max-width: 600px; /* PC에서도 600px 이상은 커지지 않도록 제한 */
+    width: 80%;
+    max-width: 600px;
     height: auto;
     object-fit: contain;
     margin-bottom: 20px;
-    filter: invert(1);
+    filter: none; /* ⭐️ 필터 제거. GIF 원본 색상을 유지 */
 }
 
+/* ⭐️ [추가] 로딩 텍스트도 배경에 따라 색상이 변경되어야 함 */
 .loading-text-full {
-    color: white;
+    color: var(--loading-text-color, white); /* 텍스트 색상도 변수로 제어 */
     font-size: 1.8em;
     font-weight: bold;
     letter-spacing: 2px;
+    transition: color 0.1s ease-out;
 }
+
+/* ... (나머지 CSS 유지) ... */

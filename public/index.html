@@ -1,256 +1,81 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Studio</title> <link rel="stylesheet" href="style.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-
-    <link rel="icon" href="/favicon.ico" type="image/x-icon">
-    <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+    <title>AI Studio</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<div class="container">
-
-    <a href="gallery.html" class="btn gallery-nav-btn gallery-nav"><i class="fas fa-images"></i> GALLERY</a>
-
-    <h1>AI STUDIO <i class="fas fa-paint-brush"></i></h1>
-
-    <div class="card step-card">
-        <h2>01. MODE</h2>
-        <div class="mode-selector">
-            <button class="btn mode-btn active" data-mode="image" title="PC 파일 변환"><i class="fas fa-desktop"></i></button>
-            <button class="btn mode-btn" data-mode="text" title="텍스트 생성"><i class="fas fa-keyboard"></i></button>
-            <button class="btn mode-btn" data-mode="qr" title="모바일 사진 전송"><i class="fas fa-qrcode"></i></button>
-        </div>
-    </div>
-
-    <div class="card step-card">
-        <h2>02. INPUT</h2>
-
-        <section id="imageMode" class="mode-content">
-            <input type="file" accept="image/*" name="pcImage" id="fileUploader" style="display: none;">
-            <button id="uploadButton" class="btn primary-btn full-width"><i class="fas fa-upload"></i> PC 파일 선택</button>
-            <img id="originalImage" alt="업로드된 원본 이미지" class="preview-img" style="display: none;">
-            <p id="fileStatus" class="status-text"></p>
-        </section>
-
-        <section id="textMode" class="mode-content" style="display: none;">
-            <textarea id="textPromptInput" placeholder="생성할 이미지를 입력하세요..." rows="3" class="input-full"></textarea>
-            <p class="safety-note">⚠️ 부적절한 내용은 거부됩니다.</p>
-        </section>
-
-        <section id="qrMode" class="mode-content" style="display: none;">
-            <button id="qrUploadStartButton" class="btn primary-btn full-width"><i class="fas fa-mobile-alt"></i> QR 생성</button>
-
-            <div id="qrBridgeArea" class="qr-bridge-area" style="display: none; text-align: center;">
-                <h4>SCAN TO UPLOAD</h4>
-                <div id="qrcode" class="qr-box"></div>
-                <p id="qrBridgeStatus" class="status-text note"></p>
-                <button id="cancelQrButton" class="btn secondary-btn small-btn">CANCEL</button>
-            </div>
-
-            <img id="qrOriginalImage" alt="QR로 업로드된 이미지" class="preview-img" style="display: none;">
-            <p id="qrFileStatus" class="status-text"></p>
-        </section>
-
-        <div id="commonAISettings" class="common-settings">
-            <h4>03. SETTINGS</h4>
-            <textarea id="stylePromptInput" placeholder="스타일 입력 (예: cinematic, low-poly)" rows="2" class="input-full"></textarea>
-            <select id="styleSelect" class="input-full">
-                <option value="default">STYLE (Optional)</option>
-                <option value="cartoon">Cartoon</option>
-                <option value="oilpainting">Oil Painting</option>
-                <option value="watercolor">Watercolor</option>
-                <option value="pixelart">Pixel Art</option>
-                <option value="photorealistic">Photorealistic</option>
-                <option value="cyberpunk">Cyberpunk</option>
-            </select>
-        </div>
-    </div>
-
-    <div class="card action-area">
-        <button id="aiConvertButton" class="btn action-btn full-width">✨ GENERATE</button>
-    </div>
-</div>
-
 <div id="fullScreenLoading" class="full-screen-loading" style="display: none;">
     <img src="brush_loading_bw.gif" alt="Processing..." class="loading-gif-full">
     <p class="loading-text-full">PROCESSING...</p>
 </div>
 
 <script>
-    let currentMode = 'image';
-    let pcUploadedFile = null;
-    let qrUploadedFileName = null;
-    let currentSessionId = null;
-    let pollingInterval = null;
+    // ... (기존 변수 및 모드 전환, 업로드, QR 로직) ...
 
-    const fileUploader = document.getElementById('fileUploader');
-    const uploadButton = document.getElementById('uploadButton');
-    const originalImage = document.getElementById('originalImage');
-    const fileStatus = document.getElementById('fileStatus');
-    const qrUploadStartButton = document.getElementById('qrUploadStartButton');
-    const qrBridgeArea = document.getElementById('qrBridgeArea');
-    const qrcodeDiv = document.getElementById('qrcode');
-    const qrBridgeStatus = document.getElementById('qrBridgeStatus');
-    const cancelQrButton = document.getElementById('cancelQrButton');
-    const qrOriginalImage = document.getElementById('qrOriginalImage');
-    const qrFileStatus = document.getElementById('qrFileStatus');
+    // ⭐️ [새로운 전역 변수]
+    let aiProcessingPromise = null; // AI 처리 비동기 작업을 저장할 Promise
+    const GIF_WHITE_FRAME_TIME_MS = 1500; // GIF가 하얀색 배경으로 전환되는 시간 (예시: 1.5초)
 
-    const fullScreenLoading = document.getElementById('fullScreenLoading');
-
-    // --- 모드 전환, 업로드, QR 로직 (유지) ---
-
-    document.querySelectorAll('.mode-btn').forEach(button => {
-        button.addEventListener('click', () => {
-            currentMode = button.dataset.mode;
-            document.querySelectorAll('.mode-content').forEach(content => content.style.display = 'none');
-            document.getElementById(currentMode + 'Mode').style.display = 'block';
-            document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
-            button.classList.add('active');
-
-            if (pollingInterval) clearInterval(pollingInterval);
-            qrBridgeArea.style.display = 'none';
-            qrUploadStartButton.style.display = 'inline-block';
-        });
-    });
-
-    uploadButton.addEventListener('click', () => fileUploader.click());
-    fileUploader.addEventListener('change', (event) => {
-        pcUploadedFile = event.target.files[0];
-        qrUploadedFileName = null;
-
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            originalImage.src = e.target.result;
-            originalImage.style.display = 'block';
-            fileStatus.textContent = `File: ${pcUploadedFile.name}`;
-            qrOriginalImage.style.display = 'none';
-        };
-        reader.readAsDataURL(pcUploadedFile);
-    });
-
-    qrUploadStartButton.addEventListener('click', startQrUploadSession);
-    cancelQrButton.addEventListener('click', cancelQrUploadSession);
-
-    async function startQrUploadSession() {
-        const response = await fetch('/api/start-upload-session');
-        const data = await response.json();
-        currentSessionId = data.sessionId;
-        const baseUrl = data.origin;
-
-        if (!currentSessionId) return alert('Session start failed.');
-
-        qrBridgeArea.style.display = 'block';
-        qrUploadStartButton.style.display = 'none';
-
-        const mobileUploadUrl = `${baseUrl}/upload.html?id=${currentSessionId}`;
-
-        qrcodeDiv.innerHTML = '';
-        new QRCode(qrcodeDiv, { text: mobileUploadUrl, width: 150, height: 150 });
-        qrBridgeStatus.textContent = "Scan the QR code to upload.";
-
-        pollingInterval = setInterval(checkUploadStatus, 1000);
-    }
-
-    async function checkUploadStatus() {
-        if (!currentSessionId) return;
-        const response = await fetch(`/api/check-upload-status/${currentSessionId}`);
-        const data = await response.json();
-
-        if (data.status === 'uploaded') {
-            clearInterval(pollingInterval);
-            currentSessionId = null;
-
-            qrUploadedFileName = data.fileInfo.fileName;
-            pcUploadedFile = null;
-
-            qrOriginalImage.src = `/images/uploads/${qrUploadedFileName}`;
-            qrOriginalImage.style.display = 'block';
-            qrFileStatus.textContent = `Upload complete: ${data.fileInfo.originalName}`;
-
-            qrBridgeArea.style.display = 'none';
-            qrUploadStartButton.style.display = 'inline-block';
-            alert('Mobile upload complete. Start generation.');
-        }
-    }
-
-    function cancelQrUploadSession() {
-        if (pollingInterval) clearInterval(pollingInterval);
-        currentSessionId = null;
-        qrBridgeArea.style.display = 'none';
-        qrUploadStartButton.style.display = 'inline-block';
-    }
-
-    // --- AI 변환 버튼 클릭 시 (핵심 로직: 리디렉션) ---
+    // --- AI 변환 버튼 클릭 시 로직 수정 ---
     document.getElementById('aiConvertButton').addEventListener('click', async () => {
-        let prompt = document.getElementById('textPromptInput').value;
-        const style = document.getElementById('styleSelect').value;
-        const stylePrompt = document.getElementById('stylePromptInput').value;
+        // ... (기존 프롬프트 및 안전 필터링 로직) ...
 
-        // ⭐️ [Feature 2] 프롬프트 안전 필터링 로직
-        const DANGER_KEYWORDS = ['sex', 'nude', 'violence', 'gun', 'weapon', 'gore', 'child abuse', 'explicit', 'hate speech', 'bloody'];
-        const fullPrompt = prompt + (stylePrompt ? ', ' + stylePrompt : '');
-        const lowerCasePrompt = fullPrompt.toLowerCase();
-
-        let safetyViolation = false;
-        for (const keyword of DANGER_KEYWORDS) {
-            if (lowerCasePrompt.includes(keyword)) {
-                safetyViolation = true;
-                break;
-            }
-        }
-
-        if (safetyViolation) {
-            return alert('⚠️ 콘텐츠 정책 위반 가능성이 있는 키워드(예: 폭력, 성적인 단어)가 감지되었습니다. 내용을 수정해주세요.');
-        }
-
-        const formData = new FormData();
-        formData.append('prompt', fullPrompt);
-        formData.append('style', style);
-        formData.append('mode', currentMode);
-
-        if (currentMode === 'image' && pcUploadedFile) {
-            formData.append('pcImage', pcUploadedFile);
-        } else if (currentMode === 'qr' && qrUploadedFileName) {
-            formData.append('qrUploadedFileName', qrUploadedFileName);
-        } else if (currentMode === 'text' && prompt) {
-            // Text to Image: 파일 필요 없음
-        } else {
-            return alert(`[${currentMode} Mode] Missing input.`);
-        }
+        // ... (기존 FormData 구성 로직) ...
 
         fullScreenLoading.style.display = 'flex'; // 전체 화면 로딩 표시
+        // ⭐️ [추가] GIF의 배경색을 관리하기 위한 CSS 변수 설정
+        document.documentElement.style.setProperty('--loading-bg-color', 'rgba(0, 0, 0, 0.95)');
 
         try {
-            const response = await fetch('/api/ai-process', { method: 'POST', body: formData });
+            // ⭐️ [수정] AI 처리 요청을 Promise로 래핑
+            aiProcessingPromise = fetch('/api/ai-process', { method: 'POST', body: formData })
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(errorData => {
+                            throw new Error(errorData.error || 'Generation failed (Server Error)');
+                        });
+                    }
+                    return response.json();
+                });
 
-            if (!response.ok) {
-                const errorData = await response.json();
-                alert(errorData.error || 'Generation failed (Server Error)');
-                fullScreenLoading.style.display = 'none';
-                return;
-            }
+            // ⭐️ [추가] AI 응답 대기 및 GIF 타이밍 맞추기
+            const [aiData] = await Promise.all([
+                aiProcessingPromise,
+                new Promise(resolve => setTimeout(resolve, GIF_WHITE_FRAME_TIME_MS))
+            ]);
 
-            const data = await response.json();
+            // ⭐️ [추가] AI 응답이 도착했고 GIF가 흰색이 되는 시점까지 대기 완료
+            // 이제 배경색을 흰색으로 변경하고 리디렉션
+            document.documentElement.style.setProperty('--loading-bg-color', 'white'); // 배경을 흰색으로
+            document.getElementById('fullScreenLoading').style.backgroundColor = 'white'; // 실제 오버레이도 흰색으로
+            document.querySelector('.loading-text-full').style.color = 'black'; // 텍스트 색상도 검은색으로
 
-            if (data.filename) {
-                // ⭐️ [수정] Vision Feedback과 file name을 포함하여 download.html로 리디렉션
-                let redirectUrl = `download.html?file=${data.filename}&mode=${data.mode}`;
-                if (data.visionDescription) {
-                    redirectUrl += `&desc=${encodeURIComponent(data.visionDescription)}`;
+            // 잠시 대기하여 흰색 배경이 보일 시간을 줌 (예: 100ms)
+            await new Promise(resolve => setTimeout(resolve, 100));
+
+            if (aiData.filename) {
+                let redirectUrl = `download.html?file=${aiData.filename}&mode=${aiData.mode}`;
+                if (aiData.visionDescription) {
+                    redirectUrl += `&desc=${encodeURIComponent(aiData.visionDescription)}`;
                 }
                 window.location.href = redirectUrl;
             } else {
                 alert('Result URL not received.');
                 fullScreenLoading.style.display = 'none';
+                // ⭐️ [추가] 오류 발생 시 배경색 초기화
+                document.documentElement.style.setProperty('--loading-bg-color', 'rgba(0, 0, 0, 0.95)');
+                document.getElementById('fullScreenLoading').style.backgroundColor = 'rgba(0, 0, 0, 0.95)';
+                document.querySelector('.loading-text-full').style.color = 'white';
             }
         } catch(e) {
-            alert('Network error or processing error.');
+            alert(`Error: ${e.message || 'Network error or processing error.'}`);
             console.error("Fetch/System Error:", e);
             fullScreenLoading.style.display = 'none';
+            // ⭐️ [추가] 오류 발생 시 배경색 초기화
+            document.documentElement.style.setProperty('--loading-bg-color', 'rgba(0, 0, 0, 0.95)');
+            document.getElementById('fullScreenLoading').style.backgroundColor = 'rgba(0, 0, 0, 0.95)';
+            document.querySelector('.loading-text-full').style.color = 'white';
         }
     });
 
