@@ -148,7 +148,7 @@ h3, h4 {
 }
 
 /* =====================================
-   ⭐️ [수정] 롤링 배너 로딩 스타일 (심플화 및 텍스트 그림자)
+   롤링 배너 로딩 스타일
    ===================================== */
 @keyframes dots {
     0% { content: "."; }
@@ -220,29 +220,28 @@ h3, h4 {
     margin-right: 20px;
 }
 
-/* ⭐️ [수정] 로딩 문구 스타일 (배경 제거 및 그림자 적용) */
+/* ⭐️ [수정] 로딩 문구 스타일 (하단 중앙 배치) */
 .loading-overlay-text {
-    position: absolute; /* 절대 위치로 중앙에 고정 */
-    top: 50%;
+    position: absolute;
+    bottom: 50px;     /* ⭐️ 하단에서 50px 위에 배치 */
     left: 50%;
-    transform: translate(-50%, -50%);
+    transform: translateX(-50%); /* ⭐️ X축만 중앙 정렬 */
 
-    background-color: transparent; /* ⭐️ [제거] 배경 투명화 */
-    color: #111; /* ⭐️ [수정] 텍스트 색상 검은색 (흰 배경에 잘 보이도록) */
+    background-color: transparent;
+    color: #111;
 
-    padding: 0; /* ⭐️ [제거] 불필요한 패딩 제거 */
+    padding: 0;
     border-radius: 0;
-    font-size: 2.5em; /* 텍스트 크기 확대 */
+    font-size: 2.5em;
     font-weight: 800;
     letter-spacing: 2px;
-    z-index: 100; /* 갤러리 이미지 위에 표시 */
+    z-index: 100;
 
-    /* ⭐️ [핵심] 텍스트 그림자 효과 (세련되고 가독성 높게) */
-    text-shadow: 1px 1px 0 white, -1px -1px 0 white, 1px -1px 0 white, -1px 1px 0 white; /* 흰색으로 얇게 외곽선 처리 */
+    text-shadow: 1px 1px 0 white, -1px -1px 0 white, 1px -1px 0 white, -1px 1px 0 white;
 }
 .loading-overlay-text p {
     margin: 0;
-    color: inherit; /* 부모 색상을 따름 */
+    color: inherit;
 }
 .loading-overlay-text p::after {
     content: ".";
@@ -252,14 +251,6 @@ h3, h4 {
     text-align: left;
     margin-left: 5px;
 }
-
-
-/* GIF 관련 스타일 (사용 안 함) */
-.full-screen-loading {
-    /* ... (스타일 유지) ... */
-}
-.loading-gif-full { /* ... (스타일 유지) ... */ }
-.loading-text-full { /* ... (스타일 유지) ... */ }
 
 
 /* QR 코드 스타일 */
