@@ -23,7 +23,7 @@
             overflow: hidden;
             box-shadow: 0 2px 5px rgba(0,0,0,0.05);
             transition: transform 0.2s;
-            position: relative; /* 삭제 버튼 배치를 위해 필요 */
+            position: relative; /* ⭐️ [필수] 삭제 버튼 배치를 위한 상대 위치 지정 */
         }
         .gallery-item:hover {
             transform: translateY(-3px);
@@ -50,12 +50,12 @@
             text-decoration: none;
             font-weight: 600;
         }
-        /* ⭐️ [추가된 CSS] 삭제 버튼 스타일 */
+        /* ⭐️ [수정] 삭제 버튼 스타일 */
         .delete-btn {
             position: absolute;
             top: 5px;
             right: 5px;
-            background: rgba(17, 17, 17, 0.7);
+            background: rgba(17, 17, 17, 0.9); /* 불투명도를 높여 확실히 보이도록 수정 */
             color: white;
             border: none;
             border-radius: 50%;
@@ -65,15 +65,11 @@
             cursor: pointer;
             line-height: 1;
             padding: 0;
-            opacity: 0.8;
-            transition: opacity 0.2s;
+            z-index: 10; /* 다른 요소 위에 확실히 표시 */
+            transition: background 0.2s;
         }
         .delete-btn:hover {
-            opacity: 1;
-            background: red;
-        }
-        .gallery-overlay {
-            padding: 10px;
+            background: #ff0000; /* 호버 시 빨간색으로 변경 */
         }
     </style>
 </head>
@@ -94,7 +90,7 @@
         const galleryContainer = document.getElementById('galleryContainer');
         const loadingStatus = document.getElementById('loadingStatus');
 
-        // ⭐️ [추가된 기능] 이미지 삭제 함수
+        // 이미지 삭제 함수 (서버 로직과 연동)
         async function deleteImage(filename, itemElement) {
             if (!confirm(`정말로 이미지 "${filename}"을 삭제하시겠습니까?`)) {
                 return;
@@ -109,8 +105,7 @@
                     alert('삭제 완료!');
                     itemElement.remove(); // UI에서 이미지 제거
 
-                    // 갤러리가 비었는지 확인
-                    if (galleryContainer.children.length <= 1) {
+                    if (galleryContainer.children.length <= 0) { // 자식 요소가 없으면
                         loadingStatus.textContent = '아직 생성된 이미지가 없습니다.';
                         loadingStatus.style.display = 'block';
                     }
@@ -124,8 +119,13 @@
         }
 
 
-        // ⭐️ [수정] 갤러리 목록을 불러오고 UI를 생성하는 함수
+        // 갤러리 목록을 불러오고 UI를 생성하는 함수
         async function loadGallery() {
+            // 기존 내용 삭제
+            galleryContainer.innerHTML = '';
+            galleryContainer.appendChild(loadingStatus);
+            loadingStatus.style.display = 'block';
+
             try {
                 const response = await fetch('/api/gallery-list');
                 const data = await response.json();
@@ -142,10 +142,10 @@
                         img.src = item.url;
                         img.alt = item.filename;
 
-                        // ⭐️ [삭제 버튼 UI 추가]
+                        // ⭐️ [HTML 복구] 삭제 버튼 UI 생성
                         const deleteBtn = document.createElement('button');
                         deleteBtn.className = 'delete-btn';
-                        deleteBtn.innerHTML = '<i class="fas fa-times"></i>';
+                        deleteBtn.innerHTML = '<i class="fas fa-times"></i>'; // Font Awesome 아이콘
                         deleteBtn.onclick = (e) => {
                             e.stopPropagation(); // 이미지 클릭 이벤트 방지
                             deleteImage(item.filename, itemDiv);
@@ -157,7 +157,7 @@
                         };
 
                         itemDiv.appendChild(img);
-                        itemDiv.appendChild(deleteBtn); // 버튼을 아이템에 추가
+                        itemDiv.appendChild(deleteBtn);
                         galleryContainer.appendChild(itemDiv);
                     });
                 } else {
