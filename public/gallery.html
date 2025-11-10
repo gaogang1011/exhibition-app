@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Studio - Gallery</title> <link rel="stylesheet" href="style.css">
+    <title>AI Studio - Gallery</title>
+    <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="icon" href="/favicon.ico" type="image/x-icon">
     <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
@@ -22,6 +23,7 @@
             overflow: hidden;
             box-shadow: 0 2px 5px rgba(0,0,0,0.05);
             transition: transform 0.2s;
+            position: relative; /* 삭제 버튼 배치를 위해 필요 */
         }
         .gallery-item:hover {
             transform: translateY(-3px);
@@ -48,6 +50,31 @@
             text-decoration: none;
             font-weight: 600;
         }
+        /* ⭐️ [추가된 CSS] 삭제 버튼 스타일 */
+        .delete-btn {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: rgba(17, 17, 17, 0.7);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            font-size: 14px;
+            cursor: pointer;
+            line-height: 1;
+            padding: 0;
+            opacity: 0.8;
+            transition: opacity 0.2s;
+        }
+        .delete-btn:hover {
+            opacity: 1;
+            background: red;
+        }
+        .gallery-overlay {
+            padding: 10px;
+        }
     </style>
 </head>
 <body>
@@ -67,6 +94,37 @@
         const galleryContainer = document.getElementById('galleryContainer');
         const loadingStatus = document.getElementById('loadingStatus');
 
+        // ⭐️ [추가된 기능] 이미지 삭제 함수
+        async function deleteImage(filename, itemElement) {
+            if (!confirm(`정말로 이미지 "${filename}"을 삭제하시겠습니까?`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/delete-image/${filename}`, {
+                    method: 'DELETE',
+                });
+
+                if (response.ok) {
+                    alert('삭제 완료!');
+                    itemElement.remove(); // UI에서 이미지 제거
+
+                    // 갤러리가 비었는지 확인
+                    if (galleryContainer.children.length <= 1) {
+                        loadingStatus.textContent = '아직 생성된 이미지가 없습니다.';
+                        loadingStatus.style.display = 'block';
+                    }
+                } else {
+                    const errorData = await response.json();
+                    alert(`삭제 실패: ${errorData.error}`);
+                }
+            } catch (e) {
+                alert('네트워크 오류로 삭제에 실패했습니다.');
+            }
+        }
+
+
+        // ⭐️ [수정] 갤러리 목록을 불러오고 UI를 생성하는 함수
         async function loadGallery() {
             try {
                 const response = await fetch('/api/gallery-list');
@@ -84,12 +142,22 @@
                         img.src = item.url;
                         img.alt = item.filename;
 
-                        // ⭐️ [복구] 갤러리 이미지 클릭 시 다운로드 페이지로 이동
+                        // ⭐️ [삭제 버튼 UI 추가]
+                        const deleteBtn = document.createElement('button');
+                        deleteBtn.className = 'delete-btn';
+                        deleteBtn.innerHTML = '<i class="fas fa-times"></i>';
+                        deleteBtn.onclick = (e) => {
+                            e.stopPropagation(); // 이미지 클릭 이벤트 방지
+                            deleteImage(item.filename, itemDiv);
+                        };
+
+                        // 이미지 클릭 시 다운로드 페이지로 이동
                         img.onclick = () => {
                             window.location.href = `download.html?file=${item.filename}`;
                         };
 
                         itemDiv.appendChild(img);
+                        itemDiv.appendChild(deleteBtn); // 버튼을 아이템에 추가
                         galleryContainer.appendChild(itemDiv);
                     });
                 } else {

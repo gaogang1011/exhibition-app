@@ -48,7 +48,7 @@ app.use(express.static(PUBLIC_PATH));
 app.use(express.json());
 
 // ===================================================
-// 보조 함수: 이미지를 Base64로 인코딩
+// 보조 함수: 이미지를 Base64로 인코딩 (유지)
 // ===================================================
 function imageToBase64(filePath) {
     if (!fs.existsSync(filePath)) {
@@ -79,7 +79,7 @@ function imageToBase64(filePath) {
 }
 
 // ===================================================
-// PC-모바일 브리지 API
+// PC-모바일 브리지 API (유지)
 // ===================================================
 
 app.get('/api/start-upload-session', (req, res) => {
@@ -153,13 +153,11 @@ app.post('/api/ai-process', upload.single('pcImage'), async (req, res) => {
 
             const { base64, mimeType } = imageToBase64(inputImagePath);
 
-            // 1. GPT-4o Vision API 호출
             const visionResponse = await openai.chat.completions.create({
                 model: "gpt-4o",
                 messages: [
                     {
                         role: "system",
-                        // ⭐️ 한국어 분석 요청 유지
                         content: "You are an expert AI image analyzer. Describe the visual elements of the photo (main subject, pose, lighting, colors, background structure). The output MUST be a single, detailed Korean text prompt (under 100 words), optimizing for image structure and composition retention. Do NOT add any stylistic terms. If the subject is a person, describe them only as a 'humanoid figure' or 'character' and avoid specific identifiers or demographics. Respond only in Korean.",
                     },
                     {
@@ -181,7 +179,6 @@ app.post('/api/ai-process', upload.single('pcImage'), async (req, res) => {
 
             visionDescription = visionResponse.choices[0].message.content.trim();
 
-            // 2. Vision 분석 결과와 사용자 프롬프트를 결합
             basePrompt = `TRANSFORM this image structure: (${visionDescription}). User's style request: ${basePrompt}`;
 
         }
@@ -256,7 +253,33 @@ app.post('/api/ai-process', upload.single('pcImage'), async (req, res) => {
 });
 
 // ===================================================
-// 갤러리 및 다운로드 API
+// [추가된 기능] 이미지 삭제 API
+// ===================================================
+app.delete('/api/delete-image/:filename', (req, res) => {
+    const filename = req.params.filename;
+    // 'ai_result_' 접두사를 확인하여 시스템 파일이 삭제되는 것을 방지합니다.
+    if (!filename || !filename.startsWith('ai_result_')) {
+        return res.status(400).json({ error: '유효하지 않은 파일명입니다.' });
+    }
+
+    const filePath = path.join(IMAGES_ROOT_PATH, filename);
+
+    if (fs.existsSync(filePath)) {
+        try {
+            fs.unlinkSync(filePath);
+            console.log(`Successfully deleted file: ${filename}`);
+            return res.status(200).json({ message: '파일이 성공적으로 삭제되었습니다.' });
+        } catch (err) {
+            console.error(`Error deleting file ${filename}:`, err);
+            return res.status(500).json({ error: '파일 삭제에 실패했습니다. 서버 권한을 확인하세요.' });
+        }
+    } else {
+        return res.status(404).json({ error: '파일을 찾을 수 없습니다.' });
+    }
+});
+
+// ===================================================
+// 갤러리 및 다운로드 API (유지)
 // ===================================================
 app.get('/api/gallery-list', (req, res) => {
     try {
